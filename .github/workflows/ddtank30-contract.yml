@@ -31,7 +31,8 @@ jobs:
             'Test-DDTank30Isolation.ps1',
             'Test-DDTank30WcfIsolation.ps1',
             'Test-DDTank30WebInstaller.ps1',
-            'Test-DDTank30SingleSourceConfig.ps1'
+            'Test-DDTank30SingleSourceConfig.ps1',
+          'Test-DDTank30WebRootPublicHost.ps1'
           )
           foreach ($name in $tests) {
             Write-Host "=== $name ==="
