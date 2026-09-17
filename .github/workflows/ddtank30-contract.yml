@@ -35,7 +35,8 @@ jobs:
             'Test-DDTank30FirstLoginFlow.ps1',
             'Test-DDTank30SingleSourceConfig.ps1',
             'Test-DDTank30PveLoadingGpPenalty.ps1',
-          'Test-DDTank30WebRootPublicHost.ps1'
+            'Test-DDTank30ReferenceSourceSync.ps1',
+            'Test-DDTank30WebRootPublicHost.ps1'
           )
           foreach ($name in $tests) {
             Write-Host "=== $name ==="
