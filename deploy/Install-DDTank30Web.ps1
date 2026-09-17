@@ -37,6 +37,7 @@ Set-ItemProperty "IIS:\AppPools\$requestPool" -Name managedPipelineMode -Value '
 if(Test-Path "IIS:\Sites\$site"){Remove-Website -Name $site}
 New-Website -Name $site -PhysicalPath $webRoot -Port $HttpPort -IPAddress $PublicIp -ApplicationPool $staticPool|Out-Null
 New-WebApplication -Site $site -Name 'Request' -PhysicalPath $requestRoot -ApplicationPool $requestPool|Out-Null
+foreach($app in @(@{Name='gunny';Path=(Join-Path $webRoot 'gunny')},@{Name='Register';Path=(Join-Path $webRoot 'Register')},@{Name='admingunny';Path=(Join-Path $webRoot 'admingunny')})){if(Test-Path $app.Path){New-WebApplication -Site $site -Name $app.Name -PhysicalPath $app.Path -ApplicationPool $requestPool|Out-Null}}
 Set-WebConfigurationProperty -PSPath 'IIS:\' -Location $site -Filter 'system.webServer/directoryBrowse' -Name enabled -Value $false
 $login="IIS APPPOOL\$requestPool";$c=New-Object Data.SqlClient.SqlConnection 'Data Source=.\SQLEXPRESS;Initial Catalog=master;Integrated Security=True';$c.Open()
 try{
