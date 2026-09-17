@@ -24,6 +24,11 @@ if($LASTEXITCODE-ne0){throw "Tank.Request.csproj build failed: $LASTEXITCODE"}
 New-Item -ItemType Directory -Force -Path $webRoot,$requestRoot|Out-Null
 & robocopy $externalWeb $webRoot /MIR /R:2 /W:1 /NFL /NDL /NJH /NJS /NP | Out-Null
 if($LASTEXITCODE-gt7){throw "Static wwwroot copy failed: $LASTEXITCODE"}
+$runtimeWeb=Join-Path $repo 'runtime-assets\v30'
+if(Test-Path $runtimeWeb){
+  & robocopy $runtimeWeb $webRoot /E /R:2 /W:1 /NFL /NDL /NJH /NJS /NP | Out-Null
+  if($LASTEXITCODE-gt7){throw "Runtime web asset overlay failed: $LASTEXITCODE"}
+}
 & robocopy $requestProject $requestRoot /MIR /R:2 /W:1 /NFL /NDL /NJH /NJS /NP /XD obj Tank.Request | Out-Null
 if($LASTEXITCODE-gt7){throw "Request artifact copy failed: $LASTEXITCODE"}
 & (Join-Path $PSScriptRoot 'Apply-DDTank30Instance.ps1') -ConfigPath $instance.ConfigPath -RepoRoot $repo -ApplyRuntime
