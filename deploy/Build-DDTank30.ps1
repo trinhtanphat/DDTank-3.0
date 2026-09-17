@@ -7,6 +7,14 @@ if (-not (Test-Path $msbuild)) { throw 'MSBuild.exe was not found.' }
 if (-not (Test-Path (Join-Path $external '.git'))) { throw 'External DDTank3 source clone is missing.' }
 
 $projects = @(
+    'Game.Base\Game.Base.csproj',
+    'SqlDataProvider\SqlDataProvider.csproj',
+    'Bussiness\Bussiness.csproj',
+    'Game.Logic\Game.Logic.csproj',
+    'Center.Server\Center.Server.csproj',
+    'Fighting.Server\Fighting.Server.csproj',
+    'Road.Flash\Road.Flash.csproj',
+    'Game.Server\Game.Server.csproj',
     'Center.Service\Center.Service.csproj',
     'Fighting.Service\Fighting.Service.csproj',
     'GameServerScript\GameServerScript.csproj',

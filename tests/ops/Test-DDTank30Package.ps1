@@ -14,16 +14,21 @@ $packageFiles = @(Get-Content -LiteralPath (Join-Path $runtime 'package-files.tx
 foreach ($forbidden in @('game\GameServerScripts.dll','game\GameServerScripts.pdb')) {
     if ($packageFiles -contains $forbidden) { throw "Stale runtime-compiled artifact was in package manifest: $forbidden" }
 }
-$manifest=@{}
-foreach($line in Get-Content -LiteralPath (Join-Path $runtime 'core-sha256.txt')){
-    if($line -notmatch '^([A-Fa-f0-9]{64})\s{2}(.+)$'){throw 'Invalid core hash manifest line.'}
-    $manifest[$Matches[2]]=$Matches[1].ToUpperInvariant()
+$coreManifest = @{}
+foreach ($line in Get-Content -LiteralPath (Join-Path $runtime 'core-sha256.txt')) {
+    if ($line -notmatch '^([A-Fa-f0-9]{64})\s{2}(.+)$') { throw "Malformed core hash manifest line: $line" }
+    $coreManifest[$matches[2]] = $matches[1].ToUpperInvariant()
 }
-$coreFiles=@('center\Center.Service.exe','center\Center.Server.dll','fighting\Fighting.Service.exe','fighting\Fighting.Server.dll','game\Road.Service.exe','game\Game.Server.dll')
-foreach($relative in $coreFiles){
-    if(-not $manifest.ContainsKey($relative)){throw "Core hash manifest missing: $relative"}
-    $runtimeHash=(Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $runtime $relative)).Hash.ToUpperInvariant()
-    if($manifest[$relative] -ne $runtimeHash){throw "Runtime binary hash differs from package-time manifest: $relative"}
+$expectedCore = @(
+    'center\Center.Service.exe','center\Center.Server.dll',
+    'fighting\Fighting.Service.exe','fighting\Fighting.Server.dll',
+    'game\Road.Service.exe','game\Game.Server.dll'
+)
+if ($coreManifest.Count -ne $expectedCore.Count) { throw "Core hash manifest count mismatch: $($coreManifest.Count)/$($expectedCore.Count)" }
+foreach ($relative in $expectedCore) {
+    if (-not $coreManifest.ContainsKey($relative)) { throw "Core hash manifest missing: $relative" }
+    $runtimeHash = (Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $runtime $relative)).Hash.ToUpperInvariant()
+    if ($runtimeHash -ne $coreManifest[$relative]) { throw "Runtime core hash mismatch: $relative" }
 }
 $firstParty = @('Bussiness.dll','Game.Base.dll','SqlDataProvider.dll')
 foreach ($name in $firstParty) {
