@@ -1,0 +1,15 @@
+$ErrorActionPreference='Stop'
+Import-Module WebAdministration
+$site='DDTank30-3.0';$requestPool='DDTank30Pool';$staticPool='DDTank30StaticPool';$req='C:\Gunny-DDTank30\webapps\Request';$binding='103.9.156.182:8083:'
+foreach($iisPath in @("IIS:\Sites\$site","IIS:\AppPools\$requestPool","IIS:\AppPools\$staticPool")){if(-not(Test-Path $iisPath)){throw "Missing IIS object: $iisPath"}}
+$s=Get-Item "IIS:\Sites\$site";if($s.state-ne'Started'){throw 'DDTank30 IIS site not started'};if([string]$s.applicationPool-ne$staticPool){throw 'Root site must use static pool'}
+if([string](Get-Item "IIS:\AppPools\$staticPool").managedRuntimeVersion){throw 'Static pool must be No Managed Code'}
+$b=@($s.bindings.Collection|?{$_.bindingInformation-eq$binding});if($b.Count-ne1){throw "Expected binding $binding"}
+$app=Get-WebApplication -Site $site -Name 'Request' -ErrorAction Stop;if($app.physicalPath-ne$req){throw 'Request app path mismatch'};if([string]$app.applicationPool-ne$requestPool){throw 'Request pool mismatch'}
+$cfg=Join-Path $req 'Web.config';[xml]$x=Get-Content $cfg -Raw;$apps=@($x.configuration.appSettings.add)
+foreach($n in @('countDb','conString')){$node=$apps|?{$_.key-eq$n}|Select -First 1;if(-not$node){throw "Missing $n"};$cs=New-Object Data.SqlClient.SqlConnectionStringBuilder ([string]$node.value);if(-not$cs.IntegratedSecurity -or $cs.UserID -or $cs.Password){throw "$n is not Integrated Security"};$want=if($n-eq'countDb'){'Db_Count_V30'}else{'Db_Tank_V30'};if($cs.InitialCatalog-ne$want){throw "$n catalog mismatch"}}
+$ep=$x.configuration.'system.serviceModel'.client.endpoint|?{[string]$_.GetAttribute('address') -like 'net.tcp://*'}|Select -First 1;if(-not$ep){throw 'Request WCF endpoint missing'};if(([uri]([string]$ep.GetAttribute('address'))).Port-ne2309){throw 'Request WCF endpoint mismatch'}
+$raw=Get-Content $cfg -Raw;if($raw -match '14\.225\.210\.178|16wan\.com|51wan\.com|the9\.com'){throw 'Legacy external URL remains in Request config'}
+$login='IIS APPPOOL\DDTank30Pool';$c=New-Object Data.SqlClient.SqlConnection 'Data Source=.\SQLEXPRESS;Initial Catalog=master;Integrated Security=True';$c.Open()
+try{foreach($db in @('Db_Tank_V30','Db_Count_V30')){$q=$c.CreateCommand();$q.CommandText="SELECT r.name FROM [$db].sys.database_role_members drm JOIN [$db].sys.database_principals r ON drm.role_principal_id=r.principal_id JOIN [$db].sys.database_principals u ON drm.member_principal_id=u.principal_id WHERE u.name=@u";[void]$q.Parameters.Add('@u',[Data.SqlDbType]::NVarChar,128);$q.Parameters['@u'].Value=$login;$rr=$q.ExecuteReader();$roles=@();while($rr.Read()){$roles+=[string]$rr.GetValue(0)};$rr.Close();if($roles-contains'db_owner'){throw "$db Request pool still db_owner"};foreach($role in @('db_datareader','db_datawriter')){if($roles-notcontains$role){throw "$db missing $role"}}}}finally{$c.Close()}
+Write-Host 'PASS: DDTank30 IIS/web deployment is isolated, sanitized, and least-privileged.'
