@@ -1,0 +1,39 @@
+﻿name: DDTank30 Contract CI
+
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-contract:
+    name: DDTank30 source contract
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run source-contract gates
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $tests = @(
+            'Test-DDTank30BuildStrategy.ps1',
+            'Test-DDTank30DatabaseSource.ps1',
+            'Test-DDTank30DbAuth.ps1',
+            'Test-DDTank30GameServerProject.ps1',
+            'Test-DDTank30Isolation.ps1',
+            'Test-DDTank30WcfIsolation.ps1',
+            'Test-DDTank30WebInstaller.ps1'
+          )
+          foreach ($name in $tests) {
+            Write-Host "=== $name ==="
+            & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path 'tests\ops' $name)
+            if ($LASTEXITCODE -ne 0) { throw "$name failed with exit $LASTEXITCODE" }
+          }
