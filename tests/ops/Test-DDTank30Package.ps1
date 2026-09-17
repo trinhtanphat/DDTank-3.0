@@ -8,6 +8,7 @@ $runtime = $RuntimeRoot
 $external = 'C:\Gunny-DDTank30\external-sources\dk-khoado-Gunny-3.0'
 $required = @(
     'center\Center.Service.exe','center\Center.Server.dll','center\Center.Service.exe.config',
+    'center\Languages\Language-vn.txt','center\Languages\Language-zh_cn.txt',
     'fighting\Fighting.Service.exe','fighting\Fighting.Server.dll','fighting\Fighting.Service.exe.config',
     'game\Road.Service.exe','game\Road.Service.exe.config','game\Game.Server.dll','game\battle.xml',
     'core-sha256.txt','provenance.txt','package-files.txt'
