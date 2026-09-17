@@ -32,6 +32,7 @@ jobs:
             'Test-DDTank30WcfIsolation.ps1',
             'Test-DDTank30WebInstaller.ps1',
             'Test-DDTank30RuntimeWebAssets.ps1',
+            'Test-DDTank30FirstLoginFlow.ps1',
             'Test-DDTank30SingleSourceConfig.ps1',
           'Test-DDTank30WebRootPublicHost.ps1'
           )

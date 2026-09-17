@@ -43,11 +43,13 @@ if(Test-Path "IIS:\Sites\$site"){Remove-Website -Name $site}
 New-Website -Name $site -PhysicalPath $webRoot -Port $HttpPort -IPAddress $PublicIp -ApplicationPool $staticPool|Out-Null
 New-WebApplication -Site $site -Name 'Request' -PhysicalPath $requestRoot -ApplicationPool $requestPool|Out-Null
 foreach($app in @(@{Name='gunny';Path=(Join-Path $webRoot 'gunny')},@{Name='Register';Path=(Join-Path $webRoot 'Register')},@{Name='admingunny';Path=(Join-Path $webRoot 'admingunny')})){if(Test-Path $app.Path){New-WebApplication -Site $site -Name $app.Name -PhysicalPath $app.Path -ApplicationPool $requestPool|Out-Null}}
+$iisStart=Join-Path $webRoot 'gunny\iisstart.htm'
+if(Test-Path -LiteralPath $iisStart){Remove-Item -LiteralPath $iisStart -Force}
 Set-WebConfigurationProperty -PSPath 'IIS:\' -Location $site -Filter 'system.webServer/directoryBrowse' -Name enabled -Value $false
 $login="IIS APPPOOL\$requestPool";$c=New-Object Data.SqlClient.SqlConnection 'Data Source=.\SQLEXPRESS;Initial Catalog=master;Integrated Security=True';$c.Open()
 try{
   $q=$c.CreateCommand();$q.CommandText="IF NOT EXISTS(SELECT 1 FROM sys.server_principals WHERE name=N'$login') CREATE LOGIN [$login] FROM WINDOWS";[void]$q.ExecuteNonQuery()
-  foreach($db in @('Db_Tank_V30','Db_Count_V30')){$q=$c.CreateCommand();$q.CommandText="USE [$db]; IF USER_ID(N'$login') IS NULL CREATE USER [$login] FOR LOGIN [$login]; IF IS_ROLEMEMBER(N'db_datareader',N'$login')<>1 ALTER ROLE [db_datareader] ADD MEMBER [$login]; IF IS_ROLEMEMBER(N'db_datawriter',N'$login')<>1 ALTER ROLE [db_datawriter] ADD MEMBER [$login]; GRANT EXECUTE TO [$login]; IF IS_ROLEMEMBER(N'db_owner',N'$login')=1 ALTER ROLE [db_owner] DROP MEMBER [$login];";[void]$q.ExecuteNonQuery()}
+  foreach($db in @('Db_Tank_V30','Db_Count_V30','Db_Membership')){$q=$c.CreateCommand();$q.CommandText="USE [$db]; IF USER_ID(N'$login') IS NULL CREATE USER [$login] FOR LOGIN [$login]; IF IS_ROLEMEMBER(N'db_datareader',N'$login')<>1 ALTER ROLE [db_datareader] ADD MEMBER [$login]; IF IS_ROLEMEMBER(N'db_datawriter',N'$login')<>1 ALTER ROLE [db_datawriter] ADD MEMBER [$login]; GRANT EXECUTE TO [$login]; IF IS_ROLEMEMBER(N'db_owner',N'$login')=1 ALTER ROLE [db_owner] DROP MEMBER [$login];";[void]$q.ExecuteNonQuery()}
 }finally{$c.Close()}
 foreach($rule in @(@{Name="DDTank30 Web $HttpPort";Port=$HttpPort},@{Name="DDTank30 Game $GamePort";Port=$GamePort})){if(-not(Get-NetFirewallRule -DisplayName $rule.Name -ErrorAction SilentlyContinue)){New-NetFirewallRule -DisplayName $rule.Name -Direction Inbound -Action Allow -Protocol TCP -LocalPort $rule.Port|Out-Null}}
 Start-Website -Name $site

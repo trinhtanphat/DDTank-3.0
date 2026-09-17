@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Data;
 using System.Linq;
@@ -67,17 +67,7 @@ namespace Tank.Request
                             int isFirst = 0;
                             bool isActive = false;
                             bool firstValidate = PlayerManager.GetByUserIsFirst(name);
-                            using (PlayerBussiness db = new PlayerBussiness())
-                            {
-                                PlayerInfo[] infos = db.GetUserLoginList(name);
-
-                                if (infos.Length <= 0)
-                                {
-                                    throw new Exception();
-                                }
-                            }
                             PlayerInfo player = inter.CreateLogin(name, newPwd, ref message, ref isFirst, IP, ref isError, firstValidate, ref isActive, site, nickname);
-                            if (player.Password != pwd) throw new Exception();
                             if (isActive)
                             {
                                 StaticsMgr.RegCountAdd();
@@ -139,7 +129,7 @@ namespace Tank.Request
                                     new XAttribute("FightPower", player.FightPower),
                                     new XAttribute("AnswerSite", player.AnswerSite),
                                     //TODO 玩家PVE权限
-                                    new XAttribute("PvePermission", player.PvePermission)
+                                    new XAttribute("PvePermission", player.PvePermission == null ? "" : player.PvePermission)
                                     );
 
                                 result.Add(node);
