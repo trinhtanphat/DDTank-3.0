@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -140,6 +140,52 @@
     <Compile Include="AI\NPC\TrainingNormalNpc.cs" />
     <Compile Include="AI\NPC\TrainingNpc.cs" />
     <Compile Include="AI\NPC\TrainingSimpleNpc.cs" />
+    <Compile Include="AI\Game\AigaH.cs" />
+    <Compile Include="AI\Game\AigaN.cs" />
+    <Compile Include="AI\Game\AigaS.cs" />
+    <Compile Include="AI\Game\AigaT.cs" />
+    <Compile Include="AI\Game\BBCopySimpleGame.cs" />
+    <Compile Include="AI\Game\BolactathanS.cs" />
+    <Compile Include="AI\Game\DomanhinhS.cs" />
+    <Compile Include="AI\Game\ExplorationHardGame.cs" />
+    <Compile Include="AI\Game\ExplorationNormalGame.cs" />
+    <Compile Include="AI\Game\ExplorationSimpleGame.cs" />
+    <Compile Include="AI\Game\ExplorationTerrorGame.cs" />
+    <Compile Include="AI\Game\GCGCHard.cs" />
+    <Compile Include="AI\Game\GCGCNormal.cs" />
+    <Compile Include="AI\Game\GCGCSimple.cs" />
+    <Compile Include="AI\Game\TrainingGame.cs" />
+    <Compile Include="AI\Messions\Aiga4002.cs" />
+    <Compile Include="AI\Messions\Aiga4003.cs" />
+    <Compile Include="AI\Messions\BLTC5001.cs" />
+    <Compile Include="AI\Messions\DCSM4001.cs" />
+    <Compile Include="AI\Messions\DCSM4011.cs" />
+    <Compile Include="AI\Messions\domanhinhS.cs" />
+    <Compile Include="AI\Messions\GCGC1161.cs" />
+    <Compile Include="AI\Messions\GCGC1162.cs" />
+    <Compile Include="AI\Messions\GCGC1261.cs" />
+    <Compile Include="AI\Messions\GCGC1262.cs" />
+    <Compile Include="AI\Messions\GCGC1263.cs" />
+    <Compile Include="AI\Messions\GCGC1361.cs" />
+    <Compile Include="AI\Messions\GCGC1362.cs" />
+    <Compile Include="AI\Messions\GCGC1363.cs" />
+    <Compile Include="AI\Messions\GCGC1364.cs" />
+    <Compile Include="AI\NPC\NullAi.cs" />
+    <Compile Include="AI\NPC\SeventhHardCageNpc.cs" />
+    <Compile Include="AI\NPC\SeventhHardFirstBoss.cs" />
+    <Compile Include="AI\NPC\SeventhHardHenNPC.cs" />
+    <Compile Include="AI\NPC\SeventhHardHouseAi.cs" />
+    <Compile Include="AI\NPC\SeventhHardMaleAi.cs" />
+    <Compile Include="AI\NPC\SeventhHardNpc.cs" />
+    <Compile Include="AI\NPC\SeventhHardSecondBoss.cs" />
+    <Compile Include="AI\NPC\SeventhNormalFirstBoss.cs" />
+    <Compile Include="AI\NPC\SeventhNormalHenNPC.cs" />
+    <Compile Include="AI\NPC\SeventhNormalHouseAi.cs" />
+    <Compile Include="AI\NPC\SeventhNormalMaleAi.cs" />
+    <Compile Include="AI\NPC\SeventhNormalNpc.cs" />
+    <Compile Include="AI\NPC\SeventhSimpleFirstBoss.cs" />
+    <Compile Include="AI\NPC\SeventhSimpleNpc.cs" />
+    <Compile Include="AI\NPC\ThirdSimpleKingThird.cs" />
     <Compile Include="Commands\TestCommands.cs" />
     <Compile Include="Commands\TestTaskCommand.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

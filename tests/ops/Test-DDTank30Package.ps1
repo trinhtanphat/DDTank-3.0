@@ -1,6 +1,10 @@
+param(
+    [string]$RuntimeRoot = 'C:\Gunny-DDTank30\runtime'
+)
+
 $ErrorActionPreference = 'Stop'
 $repo = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
-$runtime = 'C:\Gunny-DDTank30\runtime'
+$runtime = $RuntimeRoot
 $external = 'C:\Gunny-DDTank30\external-sources\dk-khoado-Gunny-3.0'
 $required = @(
     'center\Center.Service.exe','center\Center.Server.dll','center\Center.Service.exe.config',
@@ -43,7 +47,7 @@ foreach ($name in @('Game.Logic.dll')) {
     }
 }
 $scriptCount = @(Get-ChildItem -LiteralPath (Join-Path $runtime 'game\scripts') -Filter *.cs -File -Recurse -ErrorAction SilentlyContinue).Count
-if ($scriptCount -ne 96) { throw "Expected 96 fresh GameServerScript sources, found $scriptCount." }
+if ($scriptCount -ne 142) { throw "Expected 142 fresh GameServerScript sources, found $scriptCount." }
 $externalMap = Join-Path $external 'Server\Fight\map'
 $externalBomb = Join-Path $external 'Server\Fight\bomb'
 $runtimeMap = Join-Path $runtime 'fighting\map'
@@ -64,7 +68,7 @@ foreach ($check in @(@($externalMap,$runtimeMap,251,'map'),@($externalBomb,$runt
 }
 $head = (git -C $external rev-parse HEAD).Trim()
 $provenance = Get-Content -LiteralPath (Join-Path $runtime 'provenance.txt') -Raw
-foreach ($need in @('center=fresh-source-build','fighting=fresh-source-build','game=fresh-source-build','game-scripts=fresh-source-tree;count=96',"combat-assets=dk-khoado/Gunny-3.0@$head")) {
+foreach ($need in @('center=fresh-source-build','fighting=fresh-source-build','game=fresh-source-build','game-scripts=fresh-source-tree;count=142;dk-additive=46;dk-source=dk-khoado/Gunny-3.0@16e24b119f96b93b34ddb148f9a035f71a234e67',"combat-assets=dk-khoado/Gunny-3.0@$head")) {
     if ($provenance -notmatch [regex]::Escape($need)) { throw "Missing provenance: $need" }
 }
 if ($provenance -match 'game=(prebuilt|server1)') { throw 'Prebuilt game core provenance is forbidden.' }
