@@ -29,6 +29,17 @@ if(Test-Path $runtimeWeb){
   & robocopy $runtimeWeb $webRoot /E /R:2 /W:1 /NFL /NDL /NJH /NJS /NP | Out-Null
   if($LASTEXITCODE-gt7){throw "Runtime web asset overlay failed: $LASTEXITCODE"}
 }
+$legacyLoopCss=@(
+  (Join-Path $webRoot 'gunny\scripts\style.css'),
+  (Join-Path $webRoot 'gunny\scripts\index_data\style.css')
+)
+foreach($css in $legacyLoopCss){
+  if(Test-Path -LiteralPath $css){
+    $cssRaw=[IO.File]::ReadAllText($css)
+    $cssFixed=$cssRaw -replace 'background:url\(\.\./images/loop\.jpg\) repeat-x #ceebff;\s*',('background:#ceebff;'+[Environment]::NewLine)
+    if($cssFixed-ne$cssRaw){[IO.File]::WriteAllText($css,$cssFixed,(New-Object Text.UTF8Encoding($false)))}
+  }
+}
 & robocopy $requestProject $requestRoot /MIR /R:2 /W:1 /NFL /NDL /NJH /NJS /NP /XD obj Tank.Request | Out-Null
 if($LASTEXITCODE-gt7){throw "Request artifact copy failed: $LASTEXITCODE"}
 & (Join-Path $PSScriptRoot 'Apply-DDTank30Instance.ps1') -ConfigPath $instance.ConfigPath -RepoRoot $repo -ApplyRuntime
