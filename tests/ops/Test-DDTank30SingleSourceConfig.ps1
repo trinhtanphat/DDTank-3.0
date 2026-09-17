@@ -23,5 +23,24 @@ try{
     if($raw -match '103\.9\.156\.(181|182)'){throw "$rel retained a production hard-coded host after generation."}
     [xml]$raw|Out-Null
   }
+  $runtimeRoot=Join-Path $tmp 'runtime-only-stack'
+  foreach($pair in @(
+    @('Game.Service\App.config','runtime\game\Road.Service.exe.config'),
+    @('Center.Service\App.config','runtime\center\Center.Service.exe.config'),
+    @('Fighting.Service\App.config','runtime\fighting\Fighting.Service.exe.config'),
+    @('Tank.Request\Web.config','webapps\Request\Web.config')
+  )){
+    $dst=Join-Path $runtimeRoot $pair[1]; New-Item -ItemType Directory -Force -Path (Split-Path $dst -Parent)|Out-Null; Copy-Item (Join-Path $repo $pair[0]) $dst
+  }
+  $cfg.ddtank30.root=$runtimeRoot
+  $runtimeCfg=Join-Path $tmp 'runtime-instance.json'
+  [IO.File]::WriteAllText($runtimeCfg,($cfg|ConvertTo-Json -Depth 8),(New-Object Text.UTF8Encoding($false)))
+  $missingRepo=Join-Path $tmp 'source-checkout-must-not-be-used'
+  & $apply -ConfigPath $runtimeCfg -RepoRoot $missingRepo -SkipSourceConfig -ApplyRuntime
+  if(Test-Path $missingRepo){throw 'Runtime-only mode touched the source checkout path.'}
+  [xml]$runtimeGame=Get-Content (Join-Path $runtimeRoot 'runtime\game\Road.Service.exe.config') -Raw
+  $runtimeSettings=@{}; foreach($n in $runtimeGame.configuration.appSettings.add){$runtimeSettings[[string]$n.key]=[string]$n.value}
+  if($runtimeSettings.IP-ne'203.0.113.77'){throw 'Runtime-only mode did not update the public game host.'}
+  Write-Host 'PASS: DDTank30 runtime-only apply leaves the Git checkout untouched.'
   Write-Host 'PASS: DDTank30 public endpoint is generated from one instance manifest.'
 } finally { if(Test-Path $tmp){Remove-Item $tmp -Recurse -Force} }
