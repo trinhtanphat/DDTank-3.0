@@ -49,7 +49,7 @@
 	<!-- Define our ERROR Logger -->
 	<appender name="ErrorLogFile" type="log4net.Appender.RollingFileAppender" >
 		<file value="./logs/Error.log" />
-		<appendToFile value="false" />
+		<appendToFile value="true" />
 		<maxSizeRollBackups value="10" />
 		<maximumFileSize value="1MB" />
 		<staticLogFileName value="true" />
