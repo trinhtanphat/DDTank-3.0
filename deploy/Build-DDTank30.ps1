@@ -1,6 +1,9 @@
+param(
+    [string]$RuntimeRoot = 'C:\Gunny-DDTank30\runtime'
+)
+
 $ErrorActionPreference = 'Stop'
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
-$runtimeRoot = 'C:\Gunny-DDTank30\runtime'
 $external = 'C:\Gunny-DDTank30\external-sources\dk-khoado-Gunny-3.0'
 $msbuild = 'C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe'
 if (-not (Test-Path $msbuild)) { throw 'MSBuild.exe was not found.' }
@@ -20,6 +23,27 @@ $projects = @(
     'GameServerScript\GameServerScript.csproj',
     'Game.Service\Game.Service.csproj'
 )
+
+function Clear-DDTank30StaleBuildOutputs([string]$ProjectPath) {
+    $projectDir = Split-Path (Join-Path $repoRoot $ProjectPath) -Parent
+    $objRelease = Join-Path $projectDir 'obj\Release'
+    if (Test-Path -LiteralPath $objRelease) {
+        Remove-Item -LiteralPath $objRelease -Recurse -Force
+    }
+
+    $binRelease = Join-Path $projectDir 'bin\Release'
+    if (Test-Path -LiteralPath $binRelease) {
+        $binaryExtensions = @('.dll','.pdb','.exe','.application','.manifest','.nlp')
+        Get-ChildItem -LiteralPath $binRelease -File -Recurse | Where-Object {
+            $binaryExtensions -contains $_.Extension.ToLowerInvariant()
+        } | Remove-Item -Force
+    }
+}
+
+foreach ($project in $projects) {
+    Write-Host "Purging stale build artifacts for $project..."
+    Clear-DDTank30StaleBuildOutputs $project
+}
 foreach ($project in $projects) {
     Write-Host "Cleaning $project..."
     & $msbuild (Join-Path $repoRoot $project) /t:Clean /p:Configuration=Release /p:Platform=AnyCPU /nologo /verbosity:minimal
