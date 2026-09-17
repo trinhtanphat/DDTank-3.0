@@ -17,13 +17,18 @@ if([string]::IsNullOrWhiteSpace($ExternalRoot)){$ExternalRoot=Join-Path $stackRo
 if([string]::IsNullOrWhiteSpace($VSToolsPath)){$VSToolsPath=Join-Path $stackRoot 'build-prereqs\webtargets-14.0.0.3\pkg\tools\VSToolsPath'}
 $repo=Join-Path $stackRoot 'repo';$webRoot=Join-Path $stackRoot 'webroot';$requestRoot=Join-Path $stackRoot 'webapps\Request'
 $externalWeb=Join-Path $ExternalRoot 'inetpub\wwwroot';$msbuild='C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe'
+$coreRel='gunny\ui\vietnam\swf\core.swf';$coreExpectedSha='BEE0D9DB5FD6CFC827E65CFCCA01C229E3666E3B334D91F83543068DA9C65B43';$coreSource=Join-Path $externalWeb $coreRel
 $site=$instance.WebSite;$staticPool='DDTank30StaticPool';$requestPool='DDTank30Pool';$requestProject=Join-Path $repo 'Tank.Request'
 foreach($p in @($externalWeb,$requestProject,(Join-Path $VSToolsPath 'WebApplications\Microsoft.WebApplication.targets'))){if(-not(Test-Path $p)){throw "Missing web prerequisite: $p"}}
+if(-not(Test-Path -LiteralPath $coreSource -PathType Leaf)){throw "Authoritative core asset missing: $coreSource"}
+$coreSourceHash=(Get-FileHash -LiteralPath $coreSource -Algorithm SHA256).Hash.ToUpperInvariant();if($coreSourceHash-ne$coreExpectedSha){throw "Authoritative core asset hash mismatch: $coreSourceHash"}
 & $msbuild (Join-Path $requestProject 'Tank.Request.csproj') /t:Rebuild /p:Configuration=Release "/p:VSToolsPath=$VSToolsPath" /m:1 /nologo
 if($LASTEXITCODE-ne0){throw "Tank.Request.csproj build failed: $LASTEXITCODE"}
 New-Item -ItemType Directory -Force -Path $webRoot,$requestRoot|Out-Null
 & robocopy $externalWeb $webRoot /MIR /R:2 /W:1 /NFL /NDL /NJH /NJS /NP | Out-Null
 if($LASTEXITCODE-gt7){throw "Static wwwroot copy failed: $LASTEXITCODE"}
+$coreTarget=Join-Path $webRoot $coreRel;if(-not(Test-Path -LiteralPath $coreTarget -PathType Leaf)){throw "Canonical core asset missing after webroot copy: $coreTarget"}
+$coreTargetHash=(Get-FileHash -LiteralPath $coreTarget -Algorithm SHA256).Hash.ToUpperInvariant();if($coreTargetHash-ne$coreExpectedSha){throw "Canonical core asset hash mismatch after webroot copy: $coreTargetHash"}
 $runtimeWeb=Join-Path $repo 'runtime-assets\v30'
 if(Test-Path $runtimeWeb){
   & robocopy $runtimeWeb $webRoot /E /R:2 /W:1 /NFL /NDL /NJH /NJS /NP | Out-Null
