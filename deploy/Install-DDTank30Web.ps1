@@ -1,14 +1,23 @@
-﻿param(
-  [string]$PublicIp='103.9.156.181',
-  [int]$HttpPort=8083,
-  [int]$GamePort=9300,
-  [string]$ExternalRoot='C:\Gunny-DDTank30\external-sources\dk-khoado-Gunny-3.0',
-  [string]$VSToolsPath='C:\Gunny-DDTank30\build-prereqs\webtargets-14.0.0.3\pkg\tools\VSToolsPath'
+param(
+  [string]$ConfigPath='',
+  [string]$PublicIp='',
+  [int]$HttpPort=0,
+  [int]$GamePort=0,
+  [string]$ExternalRoot='',
+  [string]$VSToolsPath=''
 )
 $ErrorActionPreference='Stop'
-$repo='C:\Gunny-DDTank30\repo';$webRoot='C:\Gunny-DDTank30\webroot';$requestRoot='C:\Gunny-DDTank30\webapps\Request'
+. (Join-Path $PSScriptRoot 'Get-DDTank30Instance.ps1')
+$instance=Get-DDTank30Instance -ConfigPath $ConfigPath
+if([string]::IsNullOrWhiteSpace($PublicIp)){$PublicIp=$instance.PublicHost}
+if($HttpPort-le0){$HttpPort=$instance.WebPort}
+if($GamePort-le0){$GamePort=$instance.RoadPort}
+$stackRoot=$instance.Root
+if([string]::IsNullOrWhiteSpace($ExternalRoot)){$ExternalRoot=Join-Path $stackRoot 'external-sources\dk-khoado-Gunny-3.0'}
+if([string]::IsNullOrWhiteSpace($VSToolsPath)){$VSToolsPath=Join-Path $stackRoot 'build-prereqs\webtargets-14.0.0.3\pkg\tools\VSToolsPath'}
+$repo=Join-Path $stackRoot 'repo';$webRoot=Join-Path $stackRoot 'webroot';$requestRoot=Join-Path $stackRoot 'webapps\Request'
 $externalWeb=Join-Path $ExternalRoot 'inetpub\wwwroot';$msbuild='C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe'
-$site='DDTank30-3.0';$staticPool='DDTank30StaticPool';$requestPool='DDTank30Pool';$requestProject=Join-Path $repo 'Tank.Request'
+$site=$instance.WebSite;$staticPool='DDTank30StaticPool';$requestPool='DDTank30Pool';$requestProject=Join-Path $repo 'Tank.Request'
 foreach($p in @($externalWeb,$requestProject,(Join-Path $VSToolsPath 'WebApplications\Microsoft.WebApplication.targets'))){if(-not(Test-Path $p)){throw "Missing web prerequisite: $p"}}
 & $msbuild (Join-Path $requestProject 'Tank.Request.csproj') /t:Rebuild /p:Configuration=Release "/p:VSToolsPath=$VSToolsPath" /m:1 /nologo
 if($LASTEXITCODE-ne0){throw "Tank.Request.csproj build failed: $LASTEXITCODE"}
@@ -17,6 +26,8 @@ New-Item -ItemType Directory -Force -Path $webRoot,$requestRoot|Out-Null
 if($LASTEXITCODE-gt7){throw "Static wwwroot copy failed: $LASTEXITCODE"}
 & robocopy $requestProject $requestRoot /MIR /R:2 /W:1 /NFL /NDL /NJH /NJS /NP /XD obj Tank.Request | Out-Null
 if($LASTEXITCODE-gt7){throw "Request artifact copy failed: $LASTEXITCODE"}
+& (Join-Path $PSScriptRoot 'Apply-DDTank30Instance.ps1') -ConfigPath $instance.ConfigPath -RepoRoot $repo -ApplyRuntime
+if($LASTEXITCODE-ne0){throw "Instance config apply failed: $LASTEXITCODE"}
 Import-Module WebAdministration
 foreach($pool in @($staticPool,$requestPool)){if(-not(Test-Path "IIS:\AppPools\$pool")){New-WebAppPool -Name $pool|Out-Null}}
 Set-ItemProperty "IIS:\AppPools\$staticPool" -Name managedRuntimeVersion -Value ''
@@ -30,15 +41,8 @@ Set-WebConfigurationProperty -PSPath 'IIS:\' -Location $site -Filter 'system.web
 $login="IIS APPPOOL\$requestPool";$c=New-Object Data.SqlClient.SqlConnection 'Data Source=.\SQLEXPRESS;Initial Catalog=master;Integrated Security=True';$c.Open()
 try{
   $q=$c.CreateCommand();$q.CommandText="IF NOT EXISTS(SELECT 1 FROM sys.server_principals WHERE name=N'$login') CREATE LOGIN [$login] FROM WINDOWS";[void]$q.ExecuteNonQuery()
-  foreach($db in @('Db_Tank_V30','Db_Count_V30')){$q=$c.CreateCommand();$q.CommandText=@"
-USE [$db];
-IF USER_ID(N'$login') IS NULL CREATE USER [$login] FOR LOGIN [$login];
-IF IS_ROLEMEMBER(N'db_datareader',N'$login')<>1 ALTER ROLE [db_datareader] ADD MEMBER [$login];
-IF IS_ROLEMEMBER(N'db_datawriter',N'$login')<>1 ALTER ROLE [db_datawriter] ADD MEMBER [$login];
-GRANT EXECUTE TO [$login];
-IF IS_ROLEMEMBER(N'db_owner',N'$login')=1 ALTER ROLE [db_owner] DROP MEMBER [$login];
-"@;[void]$q.ExecuteNonQuery()}
+  foreach($db in @('Db_Tank_V30','Db_Count_V30')){$q=$c.CreateCommand();$q.CommandText="USE [$db]; IF USER_ID(N'$login') IS NULL CREATE USER [$login] FOR LOGIN [$login]; IF IS_ROLEMEMBER(N'db_datareader',N'$login')<>1 ALTER ROLE [db_datareader] ADD MEMBER [$login]; IF IS_ROLEMEMBER(N'db_datawriter',N'$login')<>1 ALTER ROLE [db_datawriter] ADD MEMBER [$login]; GRANT EXECUTE TO [$login]; IF IS_ROLEMEMBER(N'db_owner',N'$login')=1 ALTER ROLE [db_owner] DROP MEMBER [$login];";[void]$q.ExecuteNonQuery()}
 }finally{$c.Close()}
-foreach($rule in @(@{Name='DDTank30 Web 8083';Port=$HttpPort},@{Name='DDTank30 Game 9300';Port=$GamePort})){if(-not(Get-NetFirewallRule -DisplayName $rule.Name -ErrorAction SilentlyContinue)){New-NetFirewallRule -DisplayName $rule.Name -Direction Inbound -Action Allow -Protocol TCP -LocalPort $rule.Port|Out-Null}}
+foreach($rule in @(@{Name="DDTank30 Web $HttpPort";Port=$HttpPort},@{Name="DDTank30 Game $GamePort";Port=$GamePort})){if(-not(Get-NetFirewallRule -DisplayName $rule.Name -ErrorAction SilentlyContinue)){New-NetFirewallRule -DisplayName $rule.Name -Direction Inbound -Action Allow -Protocol TCP -LocalPort $rule.Port|Out-Null}}
 Start-Website -Name $site
-Write-Host "DDTank30 web installed: http://$PublicIp`:$HttpPort/ ; Request artifact=$requestRoot"
+Write-Host "DDTank30 web installed from single instance config: http://$PublicIp`:$HttpPort/ ; Request artifact=$requestRoot"

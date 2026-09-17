@@ -1,4 +1,4 @@
-﻿name: DDTank30 Contract CI
+name: DDTank30 Contract CI
 
 on:
   pull_request:
@@ -30,7 +30,8 @@ jobs:
             'Test-DDTank30GameServerProject.ps1',
             'Test-DDTank30Isolation.ps1',
             'Test-DDTank30WcfIsolation.ps1',
-            'Test-DDTank30WebInstaller.ps1'
+            'Test-DDTank30WebInstaller.ps1',
+            'Test-DDTank30SingleSourceConfig.ps1'
           )
           foreach ($name in $tests) {
             Write-Host "=== $name ==="
