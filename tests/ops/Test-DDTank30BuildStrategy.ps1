@@ -13,4 +13,6 @@ if($raw -notmatch 'obj\\Release'){throw 'Build script must purge stale obj/Relea
 foreach($extension in @('.dll','.pdb','.exe')){if($raw -notmatch [regex]::Escape($extension)){throw "Build artifact purge must cover $extension outputs."}}
 $coreProjects=@('Game.Base\Game.Base.csproj','SqlDataProvider\SqlDataProvider.csproj','Bussiness\Bussiness.csproj','Game.Logic\Game.Logic.csproj','Road.Flash\Road.Flash.csproj','Game.Server\Game.Server.csproj')
 foreach($project in $coreProjects){if($raw -notmatch [regex]::Escape($project)){throw "Build script must explicitly clean/build source dependency: $project"}}
+$packageRaw=Get-Content (Join-Path $repo 'tests\ops\Test-DDTank30Package.ps1') -Raw
+foreach($language in @('center\Languages\Language-vn.txt','center\Languages\Language-zh_cn.txt')){if($packageRaw -notmatch [regex]::Escape($language)){throw "Package gate must require restart-critical center language: $language"}}
 Write-Host 'PASS: DDTank30 build separates clean and build phases.'
