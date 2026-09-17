@@ -40,6 +40,17 @@ function Set-AppSettingValueIfPresent([string]$Path,[string]$Key,[string]$Value)
     if ([regex]::IsMatch($raw,$pattern)) { Set-AppSettingValue $Path $Key $Value }
 }
 
+function Set-NamedConnectionStringIfPresent([string]$Path,[string]$Name,[string]$Value) {
+    if (-not (Test-Path -LiteralPath $Path)) { return }
+    $raw = [IO.File]::ReadAllText($Path)
+    $pattern = '(<add\s+name="' + [regex]::Escape($Name) + '"\s+connectionString=")[^"]*(")'
+    if (-not [regex]::IsMatch($raw,$pattern)) { return }
+    $encoded = [Security.SecurityElement]::Escape($Value)
+    $evaluator = [Text.RegularExpressions.MatchEvaluator]{ param($m) $m.Groups[1].Value + $encoded + $m.Groups[2].Value }
+    $updated = [regex]::Replace($raw,$pattern,$evaluator,1)
+    [IO.File]::WriteAllText($Path,$updated,$utf8)
+}
+
 function Set-XmlValueAttributeIfPresent([string]$Path,[string]$Element,[string]$Value) {
     if (-not (Test-Path -LiteralPath $Path)) { return }
     $raw = [IO.File]::ReadAllText($Path)
@@ -134,6 +145,9 @@ function Set-DDTank30WebRoot([string]$WebRoot) {
     $base = "http://$($instance.PublicHost):$($instance.WebPort)"
     $legacyHost = Get-DDTank30LegacyWebHost $WebRoot
 
+    $iisStart = Join-Path $WebRoot 'gunny\iisstart.htm'
+    if (Test-Path -LiteralPath $iisStart) { Remove-Item -LiteralPath $iisStart -Force }
+
     $login = Join-Path $WebRoot 'gunny\login.htm'
     if (Test-Path -LiteralPath $login) {
         $raw = [IO.File]::ReadAllText($login)
@@ -167,14 +181,22 @@ function Set-DDTank30WebRoot([string]$WebRoot) {
         Set-EndpointAddressIfPresent $request 'CenterService.ICenterService' "net.tcp://$($instance.CenterHost):$($instance.CenterPort)/"
     }
 
+    $membershipConnection = 'Data Source=.\SQLEXPRESS;Initial Catalog=Db_Membership;Integrated Security=True'
+    $tankConnection = 'Data Source=.\SQLEXPRESS;Initial Catalog=Db_Tank_V30;Integrated Security=True'
+    $register = Join-Path $WebRoot 'Register\Web.Config'
+    Set-NamedConnectionStringIfPresent $register 'Db_MembershipConnectionString' $membershipConnection
+    Set-NamedConnectionStringIfPresent $register 'Db_TankConnectionString' $tankConnection
+
     $admin = Join-Path $WebRoot 'admingunny\Web.config'
+    Set-NamedConnectionStringIfPresent $admin 'Db_TankConnectionString' $tankConnection
+    Set-AppSettingValueIfPresent $admin 'conString' $tankConnection
     Set-AppSettingValueIfPresent $admin 'Resource' "$base/Resource/"
     Set-AppSettingValueIfPresent $admin 'ServerIP' $instance.PublicHost
     Set-EndpointAddressIfPresent $admin 'CenterService.ICenterService' "net.tcp://$($instance.CenterHost):$($instance.CenterPort)/"
     Set-EndpointAddressIfPresent $admin 'WebLogin.PassPortSoap' "$base/admingunny/Flash_Port/PassPort.asmx"
 
     if (-not [string]::IsNullOrWhiteSpace($legacyHost) -and $legacyHost -ne $instance.PublicHost) {
-        foreach ($rel in @('gunny\login.htm','gunny\config.xml','gunny\Web.config','Request\Web.config','Request\Tank.Request\Web.config','admingunny\Web.config')) {
+        foreach ($rel in @('gunny\login.htm','gunny\config.xml','gunny\Web.config','Request\Web.config','Request\Tank.Request\Web.config','Register\Web.Config','admingunny\Web.config')) {
             $path = Join-Path $WebRoot $rel
             if (-not (Test-Path -LiteralPath $path)) { continue }
             $raw = [IO.File]::ReadAllText($path)

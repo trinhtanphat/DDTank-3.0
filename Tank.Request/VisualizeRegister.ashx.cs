@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Data;
 using System.Linq;
@@ -67,9 +67,18 @@ namespace Tank.Request
                 string ClothID = para["ClothID"] as string;
 
                 int sex = -1;
-                if (bool.Parse(ConfigurationSettings.AppSettings["MustSex"]))
+                bool mustSex;
+                if (bool.TryParse(ConfigurationSettings.AppSettings["MustSex"], out mustSex) && mustSex)
                 {
-                    sex = bool.Parse(para["Sex"]) ? 1 : 0;
+                    bool parsedSex;
+                    int numericSex;
+                    string rawSex = para["Sex"];
+                    if (bool.TryParse(rawSex, out parsedSex))
+                        sex = parsedSex ? 1 : 0;
+                    else if (int.TryParse(rawSex, out numericSex) && (numericSex == 0 || numericSex == 1))
+                        sex = numericSex;
+                    else
+                        throw new FormatException("Invalid Sex value.");
                 }
 
 
@@ -81,6 +90,18 @@ namespace Tank.Request
                         {
 
                             string[] styles = sex == 1 ? ConfigurationSettings.AppSettings["BoyVisualizeItem"].Split(';') : ConfigurationSettings.AppSettings["GrilVisualizeItem"].Split(';');
+
+                            // Legacy/Ruffle clients may omit visualize fields entirely. Fall back to the
+                            // first configured item in each category while still validating explicit values.
+                            if (string.IsNullOrEmpty(armID)) armID = styles[0].Split(',')[0];
+                            if (string.IsNullOrEmpty(hairID)) hairID = styles[1].Split(',')[0];
+                            if (string.IsNullOrEmpty(faceID)) faceID = styles[2].Split(',')[0];
+                            if (string.IsNullOrEmpty(ClothID)) ClothID = styles[3].Split(',')[0];
+                            if (armColor == null) armColor = string.Empty;
+                            if (hairColor == null) hairColor = string.Empty;
+                            if (faceColor == null) faceColor = string.Empty;
+                            if (ClothColor == null) ClothColor = string.Empty;
+
                             if (styles[0].Split(',').Contains(armID) && styles[1].Split(',').Contains(hairID) && styles[2].Split(',').Contains(faceID) && styles[3].Split(',').Contains(ClothID))
                             {
                                 using (PlayerBussiness db = new PlayerBussiness())
