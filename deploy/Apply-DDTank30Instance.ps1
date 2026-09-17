@@ -2,6 +2,7 @@
 param(
     [string]$ConfigPath,
     [string]$RepoRoot = (Split-Path $PSScriptRoot -Parent),
+    [switch]$SkipSourceConfig,
     [switch]$ApplyRuntime,
     [switch]$ApplyDatabase,
     [switch]$ApplyIis
@@ -64,10 +65,12 @@ function Set-RequestWebConfig([string]$Path) {
     foreach ($key in $values.Keys) { Set-AppSettingValue $Path $key $values[$key] }
 }
 
-Set-DDTank30ConfigSet -Root $RepoRoot
-foreach ($rel in @('Tank.Request\Web.config','Tank.Request\Tank.Request\Web.config')) {
-    $path = Join-Path $RepoRoot $rel
-    if (Test-Path -LiteralPath $path) { Set-RequestWebConfig $path }
+if (-not $SkipSourceConfig) {
+    Set-DDTank30ConfigSet -Root $RepoRoot
+    foreach ($rel in @('Tank.Request\Web.config','Tank.Request\Tank.Request\Web.config')) {
+        $path = Join-Path $RepoRoot $rel
+        if (Test-Path -LiteralPath $path) { Set-RequestWebConfig $path }
+    }
 }
 
 if ($ApplyRuntime) {
