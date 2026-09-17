@@ -1,5 +1,5 @@
 ﻿param(
-  [string]$PublicIp='103.9.156.182',
+  [string]$PublicIp='103.9.156.181',
   [int]$HttpPort=8083,
   [int]$GamePort=9300,
   [string]$ExternalRoot='C:\Gunny-DDTank30\external-sources\dk-khoado-Gunny-3.0',
