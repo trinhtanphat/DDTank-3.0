@@ -140,6 +140,19 @@ if (-not $SkipSourceConfig) {
     }
 }
 
+function Remove-DDTank30ThirdPartyBranding([string]$Path) {
+    if (-not (Test-Path -LiteralPath $Path)) { return }
+    $raw = [IO.File]::ReadAllText($Path)
+    $raw = [regex]::Replace($raw,'<p\s+class="mySign"[^>]*>.*?khanhnguyendev.*?</p>','',([Text.RegularExpressions.RegexOptions]::IgnoreCase -bor [Text.RegularExpressions.RegexOptions]::Singleline))
+    $raw = [regex]::Replace($raw,'https?://(?:www\.)?facebook\.com/khanhnguyennnnnn/?','#','IgnoreCase')
+    $raw = [regex]::Replace($raw,'\s*-\s*khanhnguyen@dev(?=</title>)','','IgnoreCase')
+    $raw = [regex]::Replace($raw,'khanhnguyen@dev|khanhnguyendev','Gunny 3.0','IgnoreCase')
+    [IO.File]::WriteAllText($Path,$raw,$utf8)
+    if ([IO.File]::ReadAllText($Path) -match '(?i)khanhnguyennnnnn|khanhnguyen@dev|khanhnguyendev') {
+        throw "Third-party DDTank30 branding remains in $Path"
+    }
+}
+
 function Set-DDTank30WebRoot([string]$WebRoot) {
     if (-not (Test-Path -LiteralPath $WebRoot)) { return }
     $base = "http://$($instance.PublicHost):$($instance.WebPort)"
@@ -154,7 +167,10 @@ function Set-DDTank30WebRoot([string]$WebRoot) {
         $raw = [regex]::Replace($raw,'href="https?://[^\"]+(?:/reg/forgotpass\.html[^\"]*|/Register/forgotpass\.aspx)"','href="'+$base+'/Register/forgotpass.aspx"','IgnoreCase')
         $raw = [regex]::Replace($raw,'href="https?://[^\"]+/register/"','href="'+$base+'/Register/"','IgnoreCase')
         [IO.File]::WriteAllText($login,$raw,$utf8)
+        Remove-DDTank30ThirdPartyBranding $login
     }
+
+    Remove-DDTank30ThirdPartyBranding (Join-Path $WebRoot 'index.html')
 
     $config = Join-Path $WebRoot 'gunny\config.xml'
     $xmlValues = @{
