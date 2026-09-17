@@ -1,6 +1,6 @@
 $ErrorActionPreference='Stop'
 Import-Module WebAdministration
-$site='DDTank30-3.0';$requestPool='DDTank30Pool';$staticPool='DDTank30StaticPool';$req='C:\Gunny-DDTank30\webapps\Request';$binding='103.9.156.182:8083:'
+$site='DDTank30-3.0';$requestPool='DDTank30Pool';$staticPool='DDTank30StaticPool';$req='C:\Gunny-DDTank30\webapps\Request';$binding='103.9.156.181:8083:'
 foreach($iisPath in @("IIS:\Sites\$site","IIS:\AppPools\$requestPool","IIS:\AppPools\$staticPool")){if(-not(Test-Path $iisPath)){throw "Missing IIS object: $iisPath"}}
 $s=Get-Item "IIS:\Sites\$site";if($s.state-ne'Started'){throw 'DDTank30 IIS site not started'};if([string]$s.applicationPool-ne$staticPool){throw 'Root site must use static pool'}
 if([string](Get-Item "IIS:\AppPools\$staticPool").managedRuntimeVersion){throw 'Static pool must be No Managed Code'}
