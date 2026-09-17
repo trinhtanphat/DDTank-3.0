@@ -13,3 +13,11 @@ For any task involving the server public IP/host (including migrations such as o
 - DESKTOP-PHA1S90 is source-data/client-test only for Gunny; builds/deployments/runtime belong on DESKTOP-603JII9.
 
 Read the root `AGENTS.md` in **trinhtanphat/Gunny-Infrastructure** for the full endpoint ownership contract.
+
+
+## Project scope isolation
+
+- A Gunny task may touch only Gunny/DDTank infrastructure, source, runtime, resources, launcher/client-test artifacts, and explicitly named supporting repos.
+- Do not mutate unrelated projects such as QS3D, robot-boxing, ping-booster, invoice tooling, or other repositories merely because their worktrees/processes are visible on the same machine.
+- In a Gunny conversation, `continue all` means continue all pending work **inside the current Gunny scope** unless the user explicitly names another project.
+- Stale/background processes belonging to another project are unrelated machine state; ignore or leave them alone unless they directly block the Gunny task.
