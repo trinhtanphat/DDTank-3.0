@@ -19,6 +19,7 @@ Require ($handler -match 'FindShopbyTemplatID\(VipTemplateId\)') 'VIP price must
 Require ($handler -match 'item\.AUnit == 31') '1-month shop price mapping is missing'
 Require ($handler -match 'item\.BUnit == 93') '3-month shop price mapping is missing'
 Require ($handler -match 'item\.CUnit == 365') '1-year shop price mapping is missing'
+Require ($handler -match 'renewalDays == 730') '2-year VIP renewal pricing is missing'
 Require ($handler -match 'IsolationLevel\.Serializable') 'renewal transaction must be serializable'
 Require ($handler -match 'UPDATE dbo\.Sys_Users_Detail SET') 'currency charge must be persisted in the same DB transaction'
 Require ($handler -match 'SP_VIPRenewal_Single') 'safe VIP renewal procedure must be used'

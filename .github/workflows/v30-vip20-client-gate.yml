@@ -1,0 +1,54 @@
+name: Gunny 3.0 VIP20 client/canonical gate
+
+on:
+  pull_request:
+    paths:
+      - 'client/vip20-live/**'
+      - 'runtime-assets/v30/gunny/2.png'
+      - 'runtime-assets/v30/gunny/ui/vietnam/xml/xml.png'
+      - 'deploy/Apply-DDTank30Instance.ps1'
+      - 'deploy/Get-DDTank30Instance.ps1'
+      - 'deploy/Install-DDTank30Web.ps1'
+      - 'deploy/server-instance.example.json'
+      - 'tests/v30-vip20-client-live-smoke.ps1'
+      - 'tests/v30-canonical-vip20-assets-smoke.ps1'
+      - 'tests/v30-public-web-base-smoke.ps1'
+      - '.github/workflows/v30-vip20-client-gate.yml'
+  push:
+    branches: [master]
+    paths:
+      - 'client/vip20-live/**'
+      - 'runtime-assets/v30/gunny/2.png'
+      - 'runtime-assets/v30/gunny/ui/vietnam/xml/xml.png'
+      - 'deploy/Apply-DDTank30Instance.ps1'
+      - 'deploy/Get-DDTank30Instance.ps1'
+      - 'deploy/Install-DDTank30Web.ps1'
+      - 'deploy/server-instance.example.json'
+      - 'tests/v30-vip20-client-live-smoke.ps1'
+      - 'tests/v30-canonical-vip20-assets-smoke.ps1'
+      - 'tests/v30-public-web-base-smoke.ps1'
+      - '.github/workflows/v30-vip20-client-gate.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate canonical VIP20 client assets
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $tests = @(
+            'tests/v30-vip20-client-live-smoke.ps1',
+            'tests/v30-canonical-vip20-assets-smoke.ps1',
+            'tests/v30-public-web-base-smoke.ps1'
+          )
+          foreach ($test in $tests) {
+            Write-Host "=== $test ==="
+            & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $test
+            if ($LASTEXITCODE -ne 0) { throw "$test failed with exit $LASTEXITCODE" }
+          }
