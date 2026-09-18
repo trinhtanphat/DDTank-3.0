@@ -61,6 +61,7 @@
     <Content Include="Admin\AddItem.aspx" />
     <Content Include="Admin\AddEvent.aspx" />
     <Content Include="Admin\SendMail.aspx" />
+    <Content Include="Admin\SetVip.aspx" />
     <Content Include="Admin\UserEdit.aspx" />
     <Content Include="Styles\Site.css" />
     <Content Include="Default.aspx" />
@@ -125,6 +126,13 @@
     </Compile>
     <Compile Include="Admin\SendMail.aspx.designer.cs">
       <DependentUpon>SendMail.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Admin\SetVip.aspx.cs">
+      <DependentUpon>SetVip.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Admin\SetVip.aspx.designer.cs">
+      <DependentUpon>SetVip.aspx</DependentUpon>
     </Compile>
     <Compile Include="Admin\UserEdit.aspx.cs">
       <DependentUpon>UserEdit.aspx</DependentUpon>
