@@ -1,0 +1,25 @@
+name: Gunny 3.0 VIP20 gate
+
+on:
+  pull_request:
+    paths:
+      - 'Game.Server/Packets/Server/AbstractPacketLib.cs'
+      - 'database/20260918_v30_vip20.sql'
+      - 'tests/v30-vip20-smoke.ps1'
+      - '.github/workflows/v30-vip20-gate.yml'
+  push:
+    branches:
+      - master
+    paths:
+      - 'Game.Server/Packets/Server/AbstractPacketLib.cs'
+      - 'database/20260918_v30_vip20.sql'
+      - 'tests/v30-vip20-smoke.ps1'
+
+jobs:
+  smoke:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Gunny 3.0 VIP20 invariants
+        shell: pwsh
+        run: ./tests/v30-vip20-smoke.ps1
