@@ -36,6 +36,7 @@ foreach($token in @(
   'Patch-DDTank30ClientWindAim.ps1',
   'ClientPatchJavaExe',
   'ClientPatchFfdecJar',
+  '$clientInput=$clientTarget',
   '$clientInputSha',
   '$clientPatchedSha',
   '$clientGenerationRoot',
