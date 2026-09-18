@@ -164,6 +164,7 @@
     <Compile Include="Effects\IceFronzeEquipEffect.cs" />
     <Compile Include="Effects\NoHoleEquipEffect.cs" />
     <Compile Include="IGamePlayer.cs" />
+    <Compile Include="IBotGamePlayer.cs" />
     <Compile Include="LoadingFileInfo.cs" />
     <Compile Include="MapMgr.cs" />
     <Compile Include="MissionInfoMgr.cs" />

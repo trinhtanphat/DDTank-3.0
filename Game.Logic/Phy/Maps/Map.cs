@@ -92,16 +92,34 @@ namespace Game.Logic.Phy.Maps
             return (_layer1 == null || _layer1.IsRectangleEmptyQuick(rect)) && (_layer2 == null || _layer2.IsRectangleEmptyQuick(rect));
         }
 
+                private bool HasCharacterSupport(int x, int y)
+        {
+            if (!IsEmpty(x, y))
+            {
+                return true;
+            }
+
+            bool left = x > 0 && !IsEmpty(x - 1, y);
+            bool right = x + 1 < _bound.Width && !IsEmpty(x + 1, y);
+            return left && right;
+        }
+
         public Point FindYLineNotEmptyPoint(int x, int y, int h)
         {
-            x = x < 0 ? 0 : (x >= _bound.Width) ? _bound.Width - 1 : x;
+            x = x < 0 ? 0 : (x >= _bound.Width ? _bound.Width - 1 : x);
             y = y < 0 ? 0 : y;
-            h = y + h >= _bound.Height ? _bound.Height - y - 1 : h;
-            for (int i = 0; i < h; i++)
+            if (y >= _bound.Height || h <= 0)
             {
-                if (!IsEmpty(x - 1, y) || !IsEmpty(x + 1, y))
+                return Point.Empty;
+            }
+
+            h = Math.Min(h, _bound.Height - y);
+            for (int offset = 0; offset < h; offset++, y++)
+            {
+                if (HasCharacterSupport(x, y))
+                {
                     return new Point(x, y);
-                y++;
+                }
             }
             return Point.Empty;
         }
@@ -116,7 +134,7 @@ namespace Game.Logic.Phy.Maps
             if (direction != 1 && direction != -1) return Point.Empty;
 
             int tx = x + direction * stepX;
-            if (tx < 0 || tx > _bound.Width) return Point.Empty;
+            if (tx < 0 || tx >= _bound.Width) return Point.Empty;
             Point p = FindYLineNotEmptyPoint(tx, y - stepY - 1, stepY * 2 + 3);
             if (p != Point.Empty)
             {

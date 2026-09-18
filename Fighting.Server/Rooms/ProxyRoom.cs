@@ -24,6 +24,9 @@ namespace Fighting.Server.Rooms
 
         private ServerClient m_client;
 
+        public bool IsSyntheticBotRoom { get; private set; }
+        public long BotFillEligibleTick { get; private set; }
+
         public int RoomId
         {
             get { return m_roomId; }
@@ -35,13 +38,19 @@ namespace Fighting.Server.Rooms
         }
 
         public ProxyRoom(int roomId, int orientRoomId, IGamePlayer[] players, ServerClient client)
+            : this(roomId, orientRoomId, players, client, false)
+        {
+        }
+
+        public ProxyRoom(int roomId, int orientRoomId, IGamePlayer[] players, ServerClient client, bool syntheticBotRoom)
         {
             m_roomId = roomId;
             m_orientRoomId = orientRoomId;
             m_players = new List<IGamePlayer>();
             m_players.AddRange(players);
             m_client = client;
-           // GetBaseProperty();
+            IsSyntheticBotRoom = syntheticBotRoom;
+            BotFillEligibleTick = syntheticBotRoom ? long.MaxValue : TickHelper.GetTickCount() + 5000L;
         }
 
         public void SendToAll(GSPacketIn pkg)
@@ -51,7 +60,8 @@ namespace Fighting.Server.Rooms
 
         public void SendToAll(GSPacketIn pkg, IGamePlayer except)
         {
-            m_client.SendToRoom(m_orientRoomId, pkg, except);
+            if (!IsSyntheticBotRoom && m_client != null)
+                m_client.SendToRoom(m_orientRoomId, pkg, except);
         }
 
         public int PlayerCount
@@ -111,7 +121,8 @@ namespace Fighting.Server.Rooms
             IsPlaying = true;
             m_game = game;
             game.GameStopped += new GameEventHandle(game_GameStopped);
-            m_client.SendStartGame(m_orientRoomId, game);
+            if (!IsSyntheticBotRoom && m_client != null)
+                m_client.SendStartGame(m_orientRoomId, game);
 
         }
 
@@ -119,12 +130,14 @@ namespace Fighting.Server.Rooms
         {
             m_game.GameStopped -= game_GameStopped;
             IsPlaying = false;
-            m_client.SendStopGame(m_orientRoomId, m_game.Id);
+            if (!IsSyntheticBotRoom && m_client != null)
+                m_client.SendStopGame(m_orientRoomId, m_game.Id);
         }
 
         public void Dispose()
         {
-            m_client.RemoveRoom(m_orientRoomId, this);
+            if (!IsSyntheticBotRoom && m_client != null)
+                m_client.RemoveRoom(m_orientRoomId, this);
         }
 
         public override string ToString()

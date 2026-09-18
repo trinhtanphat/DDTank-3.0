@@ -108,6 +108,20 @@ namespace Game.Logic
                 SendStartLoading(60);
                 AddAction(new WaitPlayerLoadingAction(this, 61 * 1000));
                 m_gameState = eGameState.Loading;
+                foreach (Player p in GetAllFightPlayers())
+                {
+                    IBotGamePlayer bot = p.PlayerDetail as IBotGamePlayer;
+                    if (bot != null && bot.IsBot)
+                    {
+                        p.LoadingProcess = 100;
+                        GSPacketIn load = new GSPacketIn((short)ePackageType.GAME_CMD);
+                        load.WriteByte((byte)eTankCmdType.LOAD);
+                        load.WriteInt(p.LoadingProcess);
+                        load.WriteInt(4);
+                        load.WriteInt(p.PlayerDetail.PlayerCharacter.ID);
+                        SendToAll(load);
+                    }
+                }
             }
         }
 
@@ -203,6 +217,14 @@ namespace Game.Logic
                     m_currentLiving.StartAttacking();
                     SendGameNextTurn(m_currentLiving, this, newBoxes);
 
+                    Player botPlayer = m_currentLiving as Player;
+                    if (botPlayer != null)
+                    {
+                        IBotGamePlayer bot = botPlayer.PlayerDetail as IBotGamePlayer;
+                        if (bot != null && bot.IsBot)
+                            bot.TakeTurn(this, botPlayer);
+                    }
+
                     if (m_currentLiving.IsAttacking)
                     {
                         AddAction(new WaitLivingAttackingAction(m_currentLiving, m_turnIndex, (m_timeType + 20) * 1000));
@@ -289,6 +311,11 @@ namespace Game.Logic
                 CurrentTurnTotalDamage = 0;
 
                 List<Player> players = GetAllFightPlayers();
+                bool hasBot = players.Exists(delegate(Player p)
+                {
+                    IBotGamePlayer bot = p.PlayerDetail as IBotGamePlayer;
+                    return bot != null && bot.IsBot;
+                });
 
                 int winTeam = -1;
                 foreach (Player p in players)
@@ -308,7 +335,7 @@ namespace Game.Logic
                 // int riches = 0;
                 int losebaseoffer = 0;
                 int winbaseoffer = 0;
-                int riches = CalculateGuildMatchResult(players, winTeam);
+                int riches = hasBot ? 0 : CalculateGuildMatchResult(players, winTeam);
                 if (RoomType == eRoomType.Match)
                 {
                     if (GameType == eGameType.Guild)
@@ -366,17 +393,27 @@ namespace Game.Logic
 
                         //TrieuLSL
                         //RoomType=eRoomType.
-                        if (RoomType != eRoomType.Freedom)
+                        IBotGamePlayer runtimeBot = p.PlayerDetail as IBotGamePlayer;
+                        bool isBot = runtimeBot != null && runtimeBot.IsBot;
+                        if (!hasBot && !isBot)
                         {
-                            p.PlayerDetail.AddMoney((int)Math.Round((double)Xu_Rate * gp));
-                            p.PlayerDetail.AddGold((int)Math.Round((double)Gold_Rate * gp));
-                            p.PlayerDetail.AddGiftToken((int)Math.Round((double)Gift_Rate * gp));
+                            if (RoomType != eRoomType.Freedom)
+                            {
+                                p.PlayerDetail.AddMoney((int)Math.Round((double)Xu_Rate * gp));
+                                p.PlayerDetail.AddGold((int)Math.Round((double)Gold_Rate * gp));
+                                p.PlayerDetail.AddGiftToken((int)Math.Round((double)Gift_Rate * gp));
+                            }
+                            p.GainGP = p.PlayerDetail.AddGP((int)GP_Rate * gp);
+                            var msg = LanguageMgr.GetTranslation("PVPGame.SendGameOVer.Msg1", (int)Math.Round((double)Xu_Rate * gp), (int)Math.Round((double)Xu_Rate * gp));
+                            p.PlayerDetail.SendMessage(msg);
+                            p.CanTakeOut = p.Team == 1 ? canRedTakeOut : canBlueTakeOut;
                         }
-                        p.GainGP = p.PlayerDetail.AddGP((int)GP_Rate * gp);
-
-                        var msg = LanguageMgr.GetTranslation("PVPGame.SendGameOVer.Msg1", (int)Math.Round((double)Xu_Rate * gp), (int)Math.Round((double)Xu_Rate * gp));
-                        p.PlayerDetail.SendMessage(msg);
-                        p.CanTakeOut = p.Team == 1 ? canRedTakeOut : canBlueTakeOut;
+                        else
+                        {
+                            p.GainGP = 0;
+                            p.GainOffer = 0;
+                            p.CanTakeOut = 0;
+                        }
                         riches += p.GainOffer;
 
              
@@ -436,8 +473,9 @@ namespace Game.Logic
                 StringBuilder sb = new StringBuilder();
                 foreach (Player p in players)
                 {
-                    p.PlayerDetail.OnGameOver(this, p.Team == winTeam, p.GainGP);
-
+                    IBotGamePlayer runtimeBot = p.PlayerDetail as IBotGamePlayer;
+                    if (runtimeBot == null || !runtimeBot.IsBot)
+                        p.PlayerDetail.OnGameOver(this, p.Team == winTeam, p.GainGP);
                 }
 
                 string templateIdsStr = "";
