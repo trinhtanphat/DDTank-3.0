@@ -627,12 +627,6 @@ namespace Game.Logic.Phy.Object
                 GSPacketIn pkg = new GSPacketIn((byte)ePackageType.GAME_CMD, Id);
                 pkg.Parameter1 = Id;
                 pkg.WriteByte((byte)eTankCmdType.FIRE);
-                int wind = BaseGame.EncodeWind(m_game.Wind);
-                pkg.WriteInt(wind);
-                pkg.WriteBoolean(wind >= 0);
-                pkg.WriteByte(0);
-                pkg.WriteByte(0);
-                pkg.WriteByte(0);
                 pkg.WriteInt(bombCount);
 
                 float lifeTime = 0;
