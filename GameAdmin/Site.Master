@@ -35,6 +35,7 @@
                         <asp:MenuItem NavigateUrl="~/Default.aspx" Text="Home"/>
                         <asp:MenuItem NavigateUrl="~/About.aspx" Text="About"/>
                         <asp:MenuItem NavigateUrl="~/Admin/UserEdit.aspx" Text="UserEdit"/>
+                        <asp:MenuItem NavigateUrl="~/Admin/SetVip.aspx" Text="VIP 1-20"/>
                         <asp:MenuItem NavigateUrl="~/Admin/Additem.aspx" Text="AddItem"/>
                         <asp:MenuItem NavigateUrl="~/Admin/SendMail.aspx" Text="SendMail"/>
                     </Items>
