@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -135,6 +135,10 @@
     <Compile Include="Data\StrengthenGoodsInfo.cs" />
     <Compile Include="Data\StrengthenInfo.cs" />
     <Compile Include="Data\UserInfo.cs" />
+    <Compile Include="Data\UserFieldInfo.cs" />
+    <Compile Include="Data\UserTreasureInfo.cs" />
+    <Compile Include="Data\TreasureDataInfo.cs" />
+    <Compile Include="Data\TreasureAwardInfo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SqlHelper.cs" />
   </ItemGroup>

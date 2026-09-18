@@ -54,6 +54,7 @@ jobs:
             'Test-DDTank30BaseGunnyCompatBackport.ps1',
             'Test-DDTank30ReferenceSourceSync.ps1',
             'Test-DDTank30QuestRewardCapacity.ps1',
+            'Test-DDTank30FarmTreasureCompat.ps1',
             'Test-DDTank30WebRootPublicHost.ps1'
           )
           foreach ($name in $tests) {
