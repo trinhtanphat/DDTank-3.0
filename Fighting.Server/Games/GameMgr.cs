@@ -190,7 +190,8 @@ namespace Fighting.Server.Games
         {
             try
             {
-                int index = MapMgr.GetMapIndex(mapIndex, (byte)roomType, m_serverId);
+                int requiredPerTeam = Math.Max(red == null ? 0 : red.Count, blue == null ? 0 : blue.Count);
+                int index = MapMgr.GetMapIndex(mapIndex, (byte)roomType, m_serverId, requiredPerTeam);
                 Map map = MapMgr.CloneMap(index);
 
                 if (map != null)
@@ -222,19 +223,24 @@ namespace Fighting.Server.Games
         {
             try
             {
-                int index = MapMgr.GetMapIndex(mapIndex, (byte)roomType, m_serverId);
+                int requiredPerTeam = Math.Max(red == null ? 0 : red.Count, blue == null ? 0 : blue.Count);
+                int index = MapMgr.GetMapIndex(mapIndex, (byte)roomType, m_serverId, requiredPerTeam);
                 Map map = MapMgr.CloneMap(index);
 
                 if (map != null)
                 {
                     BattleGame game = new BattleGame(m_gameId++, red, roomRed, blue, roomBlue, map, roomType, gameType, timeType);
 
+                    // Do not publish a half-created game to the update loop. Prepare and
+                    // start-message delivery must both succeed before GameMgr owns it.
+                    game.Prepare();
+                    SendStartMessage(game);
                     lock (m_games)
                     {
                         m_games.Add(game.Id, game);
                     }
-                    game.Prepare();
-                    SendStartMessage(game);
+                    log.InfoFormat("Battle game ready id={0} map={1} red={2} blue={3}",
+                        game.Id, index, red == null ? 0 : red.Count, blue == null ? 0 : blue.Count);
                     return game;
                 }
                 else
@@ -257,8 +263,14 @@ namespace Fighting.Server.Games
             {
                 foreach (Player p in game.GetAllFightPlayers())
                 {
-                    (p.PlayerDetail as ProxyPlayer).Rate = 1;
-                    GSPacketIn pkg1 = SendBufferList(p, (p.PlayerDetail as ProxyPlayer).Buffers);
+                    // Synthetic PvP bots implement IGamePlayer/IBotGamePlayer directly,
+                    // not ProxyPlayer. Only real network players own Rate/Buffers.
+                    ProxyPlayer proxy = p.PlayerDetail as ProxyPlayer;
+                    if (proxy == null)
+                        continue;
+
+                    proxy.Rate = 1;
+                    GSPacketIn pkg1 = SendBufferList(p, proxy.Buffers);
                     game.SendToAll(pkg1);
                 }
                 pkg.WriteString("撮合成功！您所在的小队开始了自由战");
@@ -272,6 +284,9 @@ namespace Fighting.Server.Games
 
         public static GSPacketIn SendBufferList(Player player, List<BufferInfo> infos)
         {
+            if (infos == null)
+                infos = new List<BufferInfo>();
+
             GSPacketIn pkg = new GSPacketIn((byte)ePackageType.BUFF_OBTAIN, player.Id);
             pkg.WriteInt(infos.Count);
             foreach (BufferInfo info in infos)
