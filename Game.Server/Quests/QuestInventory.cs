@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Game.Server.GameObjects;
+using Game.Server.GameUtils;
 using System.Threading;
 using System.Collections;
 using log4net;
@@ -328,6 +329,61 @@ namespace Game.Server.Quests
 
         #endregion
 
+        private bool CanFitQuestRewards(PlayerInventory bag, List<ItemInfo> rewards)
+        {
+            if (rewards == null || rewards.Count == 0)
+                return true;
+
+            int emptySlots = bag.GetEmptyCount();
+            Dictionary<ItemInfo, int> stackSpace = new Dictionary<ItemInfo, int>();
+            foreach (ItemInfo existing in bag.GetItems())
+            {
+                if (existing != null && existing.Template != null && existing.Count < existing.Template.MaxCount)
+                {
+                    stackSpace[existing] = existing.Template.MaxCount - existing.Count;
+                }
+            }
+
+            foreach (ItemInfo reward in rewards)
+            {
+                if (reward == null || reward.Template == null)
+                    continue;
+
+                int remaining = reward.Count;
+                foreach (ItemInfo existing in stackSpace.Keys.ToList())
+                {
+                    if (remaining <= 0)
+                        break;
+
+                    int free = stackSpace[existing];
+                    if (free <= 0 || !reward.CanStackedTo(existing))
+                        continue;
+
+                    int stacked = Math.Min(remaining, free);
+                    remaining -= stacked;
+                    stackSpace[existing] = free - stacked;
+                }
+
+                while (remaining > 0)
+                {
+                    if (emptySlots <= 0)
+                        return false;
+
+                    emptySlots--;
+                    int placed = Math.Min(remaining, reward.Template.MaxCount);
+                    remaining -= placed;
+
+                    if (placed < reward.Template.MaxCount)
+                    {
+                        ItemInfo simulated = reward.Clone();
+                        simulated.Count = placed;
+                        stackSpace[simulated] = reward.Template.MaxCount - placed;
+                    }
+                }
+            }
+            return true;
+        }
+
         #region 完成任务
         /// <summary>
         /// 用户领奖
@@ -379,7 +435,7 @@ namespace Game.Server.Quests
 
                                 for (int len = 0; len < tempCount; len += temp.MaxCount)
                                 {
-                                    int count = len + temp.MaxCount > award.RewardItemCount ? award.RewardItemCount - len : temp.MaxCount;
+                                    int count = len + temp.MaxCount > tempCount ? tempCount - len : temp.MaxCount;
                                     ItemInfo item = ItemInfo.CreateFromTemplate(temp, count, (int)ItemAddType.Quest);
                                     if (item == null)
                                         continue;
@@ -403,14 +459,15 @@ namespace Game.Server.Quests
                         }
                     }
 
-                    //判断背包的空位是否足够
-                    if (mainBg.Count > 0 && m_player.MainBag.GetEmptyCount() < mainBg.Count)
+                    // Count both free slots and usable stack capacity. A full-looking bag
+                    // can still accept stackable quest rewards without consuming a new slot.
+                    if (!CanFitQuestRewards(m_player.MainBag, mainBg))
                     {
                         baseQuest.CancelFinish(m_player);
                         m_player.Out.SendMessage(eMessageType.ERROR, m_player.GetInventoryName(eBageType.MainBag) + LanguageMgr.GetTranslation("Game.Server.Quests.BagFull") + " ");
                         return false;
                     }
-                    if (propBg.Count > 0 && m_player.PropBag.GetEmptyCount() < propBg.Count)
+                    if (!CanFitQuestRewards(m_player.PropBag, propBg))
                     {
                         baseQuest.CancelFinish(m_player);
                         m_player.Out.SendMessage(eMessageType.ERROR, m_player.GetInventoryName(eBageType.PropBag) + LanguageMgr.GetTranslation("Game.Server.Quests.BagFull") + " ");
