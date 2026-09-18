@@ -32,6 +32,11 @@ namespace Game.Server.Packets.Client
 
             string requestedNickName = packet.ReadString();
             int renewalDays = packet.ReadInt();
+
+            // Legacy Flash clients append an isBand boolean as the third field.
+            // Keep it on the wire and only treat an optional fourth byte as
+            // the explicit Xu/Gold payment mode.
+            bool legacyIsBand = packet.DataLeft > 0 ? packet.ReadBoolean() : false;
             byte paymentMode = packet.DataLeft > 0 ? packet.ReadByte() : PayWithXu;
 
             if (!String.Equals(requestedNickName, client.Player.PlayerCharacter.NickName,

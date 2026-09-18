@@ -11,7 +11,8 @@ $project = Get-Content (Join-Path $root 'Game.Server\Game.Server.csproj') -Raw
 
 Require ($enum -match 'VIP_RENEWAL\s*=\s*0x5c') 'packet 92 must be reserved for VIP renewal'
 Require ($handler -match 'String\.Equals\(requestedNickName, client\.Player\.PlayerCharacter\.NickName') 'renewal must be scoped to the authenticated player'
-Require ($handler -match 'packet\.DataLeft > 0 \? packet\.ReadByte\(\) : PayWithXu') 'legacy clients must default to Xu and new clients may select payment mode'
+Require ($handler -match 'legacyIsBand\s*=\s*packet\.DataLeft > 0 \? packet\.ReadBoolean\(\) : false') 'legacy isBand field must be preserved'
+Require ($handler -match 'paymentMode\s*=\s*packet\.DataLeft > 0 \? packet\.ReadByte\(\) : PayWithXu') 'legacy clients must default to Xu and new clients may append payment mode'
 Require ($handler -match 'PayWithGold') 'Gold payment mode is missing'
 Require ($handler -match 'GoldPerXu\s*=\s*1000') 'Gold conversion constant is missing'
 Require ($handler -match 'FindShopbyTemplatID\(VipTemplateId\)') 'VIP price must come from template 11992'
