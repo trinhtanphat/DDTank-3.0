@@ -9,7 +9,8 @@ param(
     [string]$FfdecJar,
     [string]$WorkRoot = '',
     [string]$ExpectedInputSha256 = '',
-    [string]$ExpectedOutputSha256 = ''
+    [string]$ExpectedOutputSha256 = '',
+    [string]$ResourceBaseUrl = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -83,6 +84,13 @@ $InputEncodedClient = [IO.Path]::GetFullPath($InputEncodedClient)
 $OutputEncodedClient = [IO.Path]::GetFullPath($OutputEncodedClient)
 $JavaExe = [IO.Path]::GetFullPath($JavaExe)
 $FfdecJar = [IO.Path]::GetFullPath($FfdecJar)
+$resourceBase = $ResourceBaseUrl.Trim()
+if ($resourceBase) {
+    Require ($resourceBase -match '^https?://') 'ResourceBaseUrl must use http:// or https://.'
+    Require (-not $resourceBase.Contains('"')) 'ResourceBaseUrl must not contain a double quote.'
+    Require (-not $resourceBase.Contains("`r") -and -not $resourceBase.Contains("`n")) 'ResourceBaseUrl must be a single line.'
+    if (-not $resourceBase.EndsWith('/')) { $resourceBase += '/' }
+}
 
 Require (Test-Path -LiteralPath $InputEncodedClient) "Input client not found: $InputEncodedClient"
 Require (Test-Path -LiteralPath $JavaExe) "Java executable not found: $JavaExe"
@@ -110,19 +118,23 @@ $verifyRoot = Join-Path $WorkRoot 'verify'
 
 Decode-DDTank30AlmClient $InputEncodedClient $decodedSwf
 
-$selectedClasses = 'game.objects.GameLocalPlayer,game.view.VaneView'
+$selectedClasses = 'game.objects.GameLocalPlayer,game.view.VaneView,ddt.manager.PathManager'
 Invoke-Java @('-jar', $FfdecJar, '-onerror', 'abort', '-selectclass', $selectedClasses, '-export', 'script', $exportRoot, $decodedSwf)
 
 $gameLocalSource = Join-Path $exportRoot 'scripts\game\objects\GameLocalPlayer.as'
 $vaneSource = Join-Path $exportRoot 'scripts\game\view\VaneView.as'
+$pathManagerSource = Join-Path $exportRoot 'scripts\ddt\manager\PathManager.as'
 Require (Test-Path -LiteralPath $gameLocalSource) 'FFDec did not export GameLocalPlayer.as.'
 Require (Test-Path -LiteralPath $vaneSource) 'FFDec did not export VaneView.as.'
+Require (Test-Path -LiteralPath $pathManagerSource) 'FFDec did not export PathManager.as.'
 
-New-Item -ItemType Directory -Force -Path (Join-Path $patchRoot 'game\objects'), (Join-Path $patchRoot 'game\view') | Out-Null
+New-Item -ItemType Directory -Force -Path (Join-Path $patchRoot 'game\objects'), (Join-Path $patchRoot 'game\view'), (Join-Path $patchRoot 'ddt\manager') | Out-Null
 $gameLocalPatched = Join-Path $patchRoot 'game\objects\GameLocalPlayer.as'
 $vanePatched = Join-Path $patchRoot 'game\view\VaneView.as'
+$pathManagerPatched = Join-Path $patchRoot 'ddt\manager\PathManager.as'
 Copy-Item -LiteralPath $gameLocalSource -Destination $gameLocalPatched -Force
 Copy-Item -LiteralPath $vaneSource -Destination $vanePatched -Force
+Copy-Item -LiteralPath $pathManagerSource -Destination $pathManagerPatched -Force
 
 $gameLocal = [IO.File]::ReadAllText($gameLocalPatched, [Text.Encoding]::UTF8)
 $gameLocal = $gameLocal.Replace('_map', 'map')
@@ -246,6 +258,16 @@ $vane = [Regex]::Replace($vane, $zeroPattern, $zeroReplacement, 1)
 Require ($vane -ne $zeroBefore) 'Could not patch VaneView numeric fallback.'
 [IO.File]::WriteAllText($vanePatched, $vane, (New-Object Text.UTF8Encoding($false)))
 
+if ($resourceBase) {
+    $pathManager = [IO.File]::ReadAllText($pathManagerPatched, [Text.Encoding]::UTF8)
+    $setupPattern = 'info\s*=\s*param1;\s*SITE_MAIN\s*=\s*info\.SITE;'
+    $setupReplacement = 'info = param1;' + [Environment]::NewLine + '         info.SITE = "' + $resourceBase + '";' + [Environment]::NewLine + '         SITE_MAIN = info.SITE;'
+    $pathBefore = $pathManager
+    $pathManager = [Regex]::Replace($pathManager, $setupPattern, $setupReplacement, 1)
+    Require ($pathManager -ne $pathBefore) 'Could not patch PathManager.setup resource base.'
+    [IO.File]::WriteAllText($pathManagerPatched, $pathManager, (New-Object Text.UTF8Encoding($false)))
+}
+
 Invoke-Java @('-jar', $FfdecJar, '-onerror', 'abort', '-importScript', $decodedSwf, $patchedSwf, $patchRoot)
 Require (Test-Path -LiteralPath $patchedSwf) 'FFDec did not produce the patched SWF.'
 
@@ -253,12 +275,17 @@ Invoke-Java @('-jar', $FfdecJar, '-onerror', 'abort', '-selectclass', $selectedC
 
 $verifiedGameLocal = [IO.File]::ReadAllText((Join-Path $verifyRoot 'scripts\game\objects\GameLocalPlayer.as'), [Text.Encoding]::UTF8)
 $verifiedVane = [IO.File]::ReadAllText((Join-Path $verifyRoot 'scripts\game\view\VaneView.as'), [Text.Encoding]::UTF8)
+$verifiedPathManager = [IO.File]::ReadAllText((Join-Path $verifyRoot 'scripts\ddt\manager\PathManager.as'), [Text.Encoding]::UTF8)
 
 Require ($verifiedGameLocal -match 'if\(this\._isShooting\)[\s\S]*this\._shootCount < this\.localPlayer\.shootCount[\s\S]*sendGameCMDDirection') 'Patched SWF is missing mid-volley left/right direction logic.'
 Require ($verifiedGameLocal -match '\+\+this\._shootCount;[\s\S]{0,300}if\(this\._shootCount >= this\.localPlayer\.shootCount\)[\s\S]{0,300}this\._shootTimer\.stop\(\)') 'Patched SWF is missing final-shot cleanup.'
 Require ($verifiedGameLocal -match '_loc2_ = shootPoint\(\);[\s\S]{0,250}sendGameCMDShoot') 'Patched SWF does not recompute the muzzle point for each projectile.'
 Require ($verifiedVane -match 'param3 = \[param1 >= 0,0,0,0\]') 'Patched SWF is missing wind-direction fallback.'
 Require ($verifiedVane -match 'this\._zeroTxt\.text = this\.addZero\(param1\)') 'Patched SWF is missing numeric wind fallback.'
+if ($resourceBase) {
+    $resourceLiteral = [Regex]::Escape('info.SITE = "' + $resourceBase + '";')
+    Require ($verifiedPathManager -match $resourceLiteral) 'Patched SWF is missing the canonical resource-base override.'
+}
 
 Encode-DDTank30AlmClient $InputEncodedClient $patchedSwf $OutputEncodedClient
 Decode-DDTank30AlmClient $OutputEncodedClient $roundTripSwf
@@ -276,4 +303,5 @@ Write-Host 'DDTANK30_CLIENT_WIND_AIM_PATCH=PASS'
 Write-Host "INPUT_SHA256=$inputSha"
 Write-Host "PATCHED_SWF_SHA256=$patchedSwfSha"
 Write-Host "OUTPUT_SHA256=$outputSha"
+if ($resourceBase) { Write-Host "RESOURCE_BASE_URL=$resourceBase" }
 Write-Host "OUTPUT=$OutputEncodedClient"
