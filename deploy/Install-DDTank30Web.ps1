@@ -43,6 +43,8 @@ $clientRel='gunny\2.png'
 $clientTarget=Join-Path $webRoot $clientRel
 $clientInput=$clientTarget
 $clientPatcher=Join-Path $PSScriptRoot 'Patch-DDTank30ClientWindAim.ps1'
+$clientResourceBaseUrl=('http://'+$PublicIp+':'+$HttpPort+'/Resource/')
+$clientPatchContract='wind-aim-resource-host-v3'
 foreach($p in @($clientInput,$clientPatcher)){if(-not(Test-Path -LiteralPath $p -PathType Leaf)){throw "Missing client wind/aim patch prerequisite: $p"}}
 
 $clientInputSha=(Get-FileHash -LiteralPath $clientInput -Algorithm SHA256).Hash.ToUpperInvariant()
@@ -65,7 +67,9 @@ if((Test-Path -LiteralPath $clientOverlay -PathType Leaf) -and (Test-Path -Liter
     $clientMeta=Get-Content -LiteralPath $clientManifest -Raw | ConvertFrom-Json
     $manifestInputSha=([string]$clientMeta.input_sha256).ToUpperInvariant()
     $manifestOutputSha=([string]$clientMeta.output_sha256).ToUpperInvariant()
-    if($manifestInputSha-eq$clientInputSha -and $manifestOutputSha){
+    $manifestPatchContract=[string]$clientMeta.patch_contract
+    $manifestResourceBaseUrl=[string]$clientMeta.resource_base_url
+    if($manifestInputSha-eq$clientInputSha -and $manifestOutputSha -and $manifestPatchContract-eq$clientPatchContract -and $manifestResourceBaseUrl-eq$clientResourceBaseUrl){
       $clientOverlaySha=(Get-FileHash -LiteralPath $clientOverlay -Algorithm SHA256).Hash.ToUpperInvariant()
       if($clientOverlaySha-eq$manifestOutputSha){
         $clientPatchedSha=$manifestOutputSha
@@ -85,7 +89,7 @@ if(-not$clientOverlayValid){
   $clientPatchWork=Join-Path $stackRoot ('_artifacts\client-wind-aim-installer\'+$clientInputSha+'-'+$clientPatchId)
   $clientOverlayTemp=Join-Path $clientGenerationRoot ('2.'+$clientPatchId+'.tmp.png')
   try{
-    & $clientPatcher -InputEncodedClient $clientInput -OutputEncodedClient $clientOverlayTemp -JavaExe $ClientPatchJavaExe -FfdecJar $ClientPatchFfdecJar -WorkRoot $clientPatchWork -ExpectedInputSha256 $clientInputSha
+    & $clientPatcher -InputEncodedClient $clientInput -OutputEncodedClient $clientOverlayTemp -JavaExe $ClientPatchJavaExe -FfdecJar $ClientPatchFfdecJar -WorkRoot $clientPatchWork -ExpectedInputSha256 $clientInputSha -ResourceBaseUrl $clientResourceBaseUrl
     if($LASTEXITCODE-ne0){throw "Client wind/aim patcher failed: $LASTEXITCODE"}
 
     $clientPatchedSha=(Get-FileHash -LiteralPath $clientOverlayTemp -Algorithm SHA256).Hash.ToUpperInvariant()
@@ -100,6 +104,8 @@ if(-not$clientOverlayValid){
       output_sha256=$clientPatchedSha
       generated_at=(Get-Date).ToString('o')
       patcher='Patch-DDTank30ClientWindAim.ps1'
+      patch_contract=$clientPatchContract
+      resource_base_url=$clientResourceBaseUrl
     }
     $clientManifestTemp=$clientManifest+'.tmp'
     $clientMeta | ConvertTo-Json | Set-Content -LiteralPath $clientManifestTemp -Encoding UTF8
@@ -135,6 +141,11 @@ try {
 } catch {
   throw "Instance config apply failed: $($_.Exception.Message)"
 }
+$ballListBuilder=Join-Path $PSScriptRoot 'Build-DDTank30BallListCache.ps1'
+if(-not(Test-Path -LiteralPath $ballListBuilder -PathType Leaf)){throw "Missing BallList cache builder: $ballListBuilder"}
+& $ballListBuilder -RequestRoot $requestRoot -ExpectedDatabase 'Db_Tank_V30' -ExpectedMinimumCount 300
+$ballListPath=Join-Path $requestRoot 'BallList.xml'
+if(-not(Test-Path -LiteralPath $ballListPath -PathType Leaf)){throw "BallList cache missing after rebuild: $ballListPath"}
 $legacyBootstrapAliases=@(
   @{Source=(Join-Path $webRoot 'gunny\Loading.swf');Target=(Join-Path $webRoot 'Loading.swf')},
   @{Source=(Join-Path $webRoot 'gunny\config.xml');Target=(Join-Path $webRoot 'config.xml')}
