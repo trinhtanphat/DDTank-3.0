@@ -198,6 +198,10 @@
     <Compile Include="AI\NPC\TrainingGame\NewTrainingBoss21002.cs" />
     <Compile Include="AI\NPC\TrainingGame\NewTrainingBoss23003.cs" />
     <Compile Include="AI\NPC\TrainingGame\NewTrainingBoss24002.cs" />
+    <Compile Include="AI\NPC\ThirdHardBloomNpcS.cs" />
+    <Compile Include="AI\NPC\ThirdNormalBloomNpcS.cs" />
+    <Compile Include="AI\NPC\ThirdSimpleKingFirst.cs" />
+    <Compile Include="AI\NPC\ThirdTerrorBloomNpcS.cs" />
     <Compile Include="Commands\TestCommands.cs" />
     <Compile Include="Commands\TestTaskCommand.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

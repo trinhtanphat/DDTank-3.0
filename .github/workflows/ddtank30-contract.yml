@@ -37,6 +37,7 @@ jobs:
             'Test-DDTank30SingleSourceConfig.ps1',
             'Test-DDTank30PveLoadingGpPenalty.ps1',
             'Test-DDTank30PveScriptCoverage.ps1',
+            'Test-DDTank30Gunny92CompatBackport.ps1',
             'Test-DDTank30ReferenceSourceSync.ps1',
             'Test-DDTank30WebRootPublicHost.ps1'
           )
