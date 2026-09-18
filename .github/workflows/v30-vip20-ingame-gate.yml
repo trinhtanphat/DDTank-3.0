@@ -1,0 +1,19 @@
+name: Gunny 3.0 in-game VIP20 gate
+
+on:
+  pull_request:
+    paths:
+      - 'Game.Server/Packets/ePackageType.cs'
+      - 'Game.Server/Packets/Client/OpenVipHandler.cs'
+      - 'Game.Server/Game.Server.csproj'
+      - 'tests/v30-vip20-ingame-smoke.ps1'
+      - '.github/workflows/v30-vip20-ingame-gate.yml'
+
+jobs:
+  smoke:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Gunny 3.0 in-game VIP20 renewal
+        shell: pwsh
+        run: ./tests/v30-vip20-ingame-smoke.ps1
