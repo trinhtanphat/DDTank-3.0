@@ -1,0 +1,21 @@
+name: Gunny 3.0 Admin VIP20 gate
+
+on:
+  pull_request:
+    paths:
+      - 'GameAdmin/Admin/SetVip.aspx'
+      - 'GameAdmin/Admin/SetVip.aspx.cs'
+      - 'GameAdmin/Admin/SetVip.aspx.designer.cs'
+      - 'GameAdmin/AdminGunny.csproj'
+      - 'GameAdmin/Site.Master'
+      - 'tests/v30-admingunny-vip20-smoke.ps1'
+      - '.github/workflows/v30-admingunny-vip20-gate.yml'
+
+jobs:
+  smoke:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Gunny 3.0 Admin VIP20 invariants
+        shell: pwsh
+        run: ./tests/v30-admingunny-vip20-smoke.ps1
