@@ -45,3 +45,46 @@ jobs:
             & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path 'tests\ops' $name)
             if ($LASTEXITCODE -ne 0) { throw "$name failed with exit $LASTEXITCODE" }
           }
+
+
+  pvp-smart-bot:
+    name: DDTank30 smart bot build
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Run smart bot contracts
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $tests = @(
+            'tests/pvp-smart-bot-smoke.ps1',
+            'tests/pvp-bot-terrain-clear-smoke.ps1'
+          )
+          foreach ($test in $tests) {
+            Write-Host "=== $test ==="
+            & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $test
+            if ($LASTEXITCODE -ne 0) { throw "$test failed with exit $LASTEXITCODE" }
+          }
+
+      - name: Build Game.Logic and Fighting.Server
+        shell: powershell
+        run: |
+          msbuild ./Game.Logic/Game.Logic.csproj /t:Build /p:Configuration=Release /m /v:minimal
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          msbuild ./Fighting.Server/Fighting.Server.csproj /t:Build /p:Configuration=Release /m /v:minimal
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Upload smart bot Fight artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ddtank30-smart-bot-fight
+          path: |
+            Game.Logic/bin/Release/Game.Logic.dll
+            Fighting.Server/bin/Release/Fighting.Server.dll
+          if-no-files-found: error
