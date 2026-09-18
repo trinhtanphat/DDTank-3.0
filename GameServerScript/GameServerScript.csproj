@@ -203,6 +203,7 @@
     <Compile Include="AI\NPC\ThirdSimpleKingFirst.cs" />
     <Compile Include="AI\NPC\ThirdTerrorBloomNpcS.cs" />
     <Compile Include="AI\NPC\FiveHardFirstNpc.cs" />
+    <Compile Include="AI\NPC\FiveNormalFirstNpc.cs" />
     <Compile Include="AI\NPC\FiveTerrorFirstNpc.cs" />
     <Compile Include="AI\NPC\SeizeNpcAi.cs" />
     <Compile Include="AI\NPC\SeventhNormalCageNpc.cs" />
