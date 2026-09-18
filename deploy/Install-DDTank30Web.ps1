@@ -40,8 +40,8 @@ if(Test-Path $runtimeWeb){
 }
 
 $clientRel='gunny\2.png'
-$clientInput=Join-Path $externalWeb $clientRel
 $clientTarget=Join-Path $webRoot $clientRel
+$clientInput=$clientTarget
 $clientPatcher=Join-Path $PSScriptRoot 'Patch-DDTank30ClientWindAim.ps1'
 foreach($p in @($clientInput,$clientPatcher)){if(-not(Test-Path -LiteralPath $p -PathType Leaf)){throw "Missing client wind/aim patch prerequisite: $p"}}
 
