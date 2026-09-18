@@ -421,53 +421,20 @@ namespace Game.Logic.Phy.Object
 
         #region StartMoving/StartGhostMoving/SetXY/Die
 
-        public override void StartMoving()
+                public override void StartMoving()
         {
             if (m_map != null)
             {
-                Point p = m_map.FindYLineNotEmptyPoint(m_x, m_y); ;
-                if (p.IsEmpty)
-                {
-                    m_y = m_map.Ground.Height;
-                }
-                else
-                {
-                    m_x = p.X;
-                    m_y = p.Y;
-                }
-                //Console.WriteLine("p.x : {0}, p.y : {1}, playerId {2}", p.X, p.Y, Id);
-                if (p.IsEmpty)
-                {
-                    //Console.WriteLine("p is empty, playerId : {0}", Id);
-                    m_syncAtTime = false;
-                    Die();
-                }
+                base.StartMoving(0, 30);
             }
-
         }
 
-        public override void StartMoving(int delay, int speed)
+                public override void StartMoving(int delay, int speed)
         {
             if (m_map != null)
             {
-                Point p = m_map.FindYLineNotEmptyPoint(m_x, m_y); ;
-                if (p.IsEmpty)
-                {
-                    m_y = m_map.Ground.Height;
-                }
-                else
-                {
-                    m_x = p.X;
-                    m_y = p.Y;
-                }
                 base.StartMoving(delay, speed);
-                if (p.IsEmpty)
-                {
-                    m_syncAtTime = false;
-                    Die();
-                }
             }
-
         }
 
         public void StartGhostMoving()

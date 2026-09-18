@@ -38,34 +38,40 @@ namespace Game.Logic.Actions
             m_callback = callback;
         }
 
-        protected override void ExecuteImp(BaseGame game, long tick)
+                protected override void ExecuteImp(BaseGame game, long tick)
         {
-            if (!m_isSent)
+            int previousTargetY = m_toY;
+            var landing = game.Map.FindYLineNotEmptyPoint(m_toX, m_living.Y);
+            int authoritativeY = landing.IsEmpty ? game.Map.Bound.Height + 1 : landing.Y;
+            if (authoritativeY >= m_living.Y)
+            {
+                m_toY = authoritativeY;
+            }
+
+            if (!m_isSent || previousTargetY != m_toY)
             {
                 m_isSent = true;
                 game.SendLivingFall(m_living, m_toX, m_toY, m_fallSpeed, m_action, m_type);
             }
 
-            if (m_toY > m_living.Y + m_fallSpeed)
+            int step = m_fallSpeed > 0 ? m_fallSpeed : 1;
+            if (m_toY > m_living.Y + step)
             {
-                m_living.SetXY(m_toX, m_living.Y + m_fallSpeed);
+                m_living.SetXY(m_toX, m_living.Y + step);
+                return;
             }
-            else
+
+            m_living.SetXY(m_toX, m_toY);
+            if (game.Map.IsOutMap(m_toX, m_toY))
             {
-                m_living.SetXY(m_toX, m_toY);
-                if (game.Map.IsOutMap(m_toX, m_toY))
-                {
-                    m_living.SyncAtTime = false;
-                    m_living.Die();
-                    Console.WriteLine("掉落Fall" + m_living.IsLiving.ToString());
-                }
-                if (m_callback != null)
-                {
-                    //m_living.RunLuaFunction(m_callback);
-                    m_living.CallFuction(m_callback, 0);
-                }
-                Finish(tick);
+                m_living.SyncAtTime = false;
+                m_living.Die();
             }
+            if (m_callback != null)
+            {
+                m_living.CallFuction(m_callback, 0);
+            }
+            Finish(tick);
         }
     }
 }
