@@ -1,4 +1,4 @@
-﻿name: DDTank30 Contract CI
+name: DDTank30 Contract CI
 
 on:
   pull_request:
