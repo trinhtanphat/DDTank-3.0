@@ -47,6 +47,9 @@ foreach ($name in @('Game.Logic.dll')) {
         if (-not (Test-Path (Join-Path $runtime "$service\$name"))) { throw "Missing first-party dependency: $service/$name" }
     }
 }
+$clr2Guard = Join-Path $repo 'deploy\Test-DDTank30Clr2Runtime.ps1'
+& powershell.exe -NoProfile -ExecutionPolicy Bypass -File $clr2Guard -RuntimeRoot $runtime
+if ($LASTEXITCODE -ne 0) { throw "CLR2 runtime guard failed with exit $LASTEXITCODE" }
 $scriptCount = @(Get-ChildItem -LiteralPath (Join-Path $runtime 'game\scripts') -Filter *.cs -File -Recurse -ErrorAction SilentlyContinue).Count
 if ($scriptCount -ne 174) { throw "Expected 174 fresh GameServerScript sources, found $scriptCount." }
 $externalMap = Join-Path $external 'Server\Fight\map'
