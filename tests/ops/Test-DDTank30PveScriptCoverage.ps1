@@ -2,10 +2,10 @@ $ErrorActionPreference = 'Stop'
 $repo = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $root = Join-Path $repo 'GameServerScript'
 $files = @(Get-ChildItem $root -Filter *.cs -File -Recurse | Where-Object { $_.FullName -notmatch '\\(bin|obj)\\' })
-if ($files.Count -ne 173) { throw "Expected 173 canonical GameServerScript source files, found $($files.Count)." }
+if ($files.Count -ne 174) { throw "Expected 174 canonical GameServerScript source files, found $($files.Count)." }
 $projectRaw = Get-Content (Join-Path $root 'GameServerScript.csproj') -Raw
 $compilePaths = @([regex]::Matches($projectRaw,'<Compile Include="([^"]+\.cs)"') | ForEach-Object { $_.Groups[1].Value })
-if ($compilePaths.Count -ne 173) { throw "GameServerScript.csproj compile count mismatch: $($compilePaths.Count)." }
+if ($compilePaths.Count -ne 174) { throw "GameServerScript.csproj compile count mismatch: $($compilePaths.Count)." }
 $compileSet = @{}; $compilePaths | ForEach-Object { $compileSet[$_.ToLowerInvariant()] = $true }
 $relativeFiles = @($files | ForEach-Object { $_.FullName.Substring($root.Length + 1) })
 foreach ($rel in $relativeFiles) { if (-not $compileSet.ContainsKey($rel.ToLowerInvariant())) { throw "Source missing from csproj: $rel" } }
@@ -34,6 +34,7 @@ $critical = @(
     'AI\NPC\SeventhSimpleNpc.cs',
     'AI\NPC\ThirdSimpleKingThird.cs',
     'AI\NPC\FiveHardFirstNpc.cs',
+    'AI\NPC\FiveNormalFirstNpc.cs',
     'AI\NPC\FiveTerrorFirstNpc.cs',
     'AI\NPC\SeizeNpcAi.cs',
     'AI\NPC\SeventhNormalCageNpc.cs',
@@ -51,7 +52,7 @@ $critical = @(
 )
 foreach ($rel in $critical) { if (-not (Test-Path -LiteralPath (Join-Path $root $rel))) { throw "Missing DB-critical PvE script: $rel" } }
 $buildRaw = Get-Content (Join-Path $repo 'deploy\Build-DDTank30.ps1') -Raw
-if ($buildRaw -notmatch '\$scripts\.Count -ne 173') { throw 'Build script must enforce the 173-script canonical count.' }
+if ($buildRaw -notmatch '\$scripts\.Count -ne 174') { throw 'Build script must enforce the 174-script canonical count.' }
 $sourceCommit = '16e24b119f96b93b34ddb148f9a035f71a234e67'
 $prov = Get-Content (Join-Path $root 'DK-KHOADO-BACKPORT.md') -Raw
 if ($prov -notmatch [regex]::Escape($sourceCommit)) { throw 'DK backport provenance commit is missing.' }
@@ -67,4 +68,7 @@ if ($yutiProv -notmatch [regex]::Escape($yutiCommit)) { throw 'Yuti compat backp
 $skelletonxCommit = '09f8cdb2891ef0b49f44c4d6f68035a728623c00'
 $skelletonxProv = Get-Content (Join-Path $root 'SKELLETONX-COMPAT-BACKPORT.md') -Raw
 if ($skelletonxProv -notmatch [regex]::Escape($skelletonxCommit)) { throw 'SkelletonX compat backport provenance commit is missing.' }
-Write-Host 'DDTANK30_PVE_SCRIPT_COVERAGE=PASS total=173 critical=54 dk=46 ddt34=12 gunny92=4 yuti=11 skelletonx=4'
+$baseGunnyCommit = '94df4bc8add1d605a098ae44e291015c453100fe'
+$baseGunnyProv = Get-Content (Join-Path $root 'BASEGUNNY-COMPAT-BACKPORT.md') -Raw
+if ($baseGunnyProv -notmatch [regex]::Escape($baseGunnyCommit)) { throw 'BaseGunny compat backport provenance commit is missing.' }
+Write-Host 'DDTANK30_PVE_SCRIPT_COVERAGE=PASS total=174 critical=55 dk=46 ddt34=12 gunny92=4 yuti=11 skelletonx=4 basegunny=1'
