@@ -3302,5 +3302,87 @@ namespace Bussiness
             }
             return user;
         }
+        public UserFieldInfo[] GetSingleFields(int ID)
+        {
+            List<UserFieldInfo> infos = new List<UserFieldInfo>();
+            SqlDataReader reader = null;
+            try
+            {
+                SqlParameter[] para = new SqlParameter[1];
+                para[0] = new SqlParameter("@ID", SqlDbType.Int, 4);
+                para[0].Value = ID;
+                db.GetReader(ref reader, "SP_Get_SingleFields", para);
+                while (reader.Read())
+                {
+                    UserFieldInfo info = new UserFieldInfo();
+                    info.ID = (int)reader["ID"];
+                    info.FarmID = (int)reader["FarmID"];
+                    info.FieldID = (int)reader["FieldID"];
+                    info.SeedID = (int)reader["SeedID"];
+                    info.PlantTime = (DateTime)reader["PlantTime"];
+                    info.AccelerateTime = (int)reader["AccelerateTime"];
+                    info.FieldValidDate = (int)reader["FieldValidDate"];
+                    info.PayTime = (DateTime)reader["PayTime"];
+                    info.GainCount = (int)reader["GainCount"];
+                    info.AutoSeedID = (int)reader["AutoSeedID"];
+                    info.AutoFertilizerID = (int)reader["AutoFertilizerID"];
+                    info.AutoSeedIDCount = (int)reader["AutoSeedIDCount"];
+                    info.AutoFertilizerCount = (int)reader["AutoFertilizerCount"];
+                    info.isAutomatic = (bool)reader["isAutomatic"];
+                    info.AutomaticTime = (DateTime)reader["AutomaticTime"];
+                    info.IsExit = (bool)reader["IsExit"];
+                    info.payFieldTime = (int)reader["payFieldTime"];
+                    infos.Add(info);
+                }
+            }
+            catch (Exception e)
+            {
+                if (log.IsErrorEnabled)
+                    log.Error("SP_GetSingleFields", e);
+            }
+            finally
+            {
+                if (reader != null && !reader.IsClosed)
+                    reader.Close();
+            }
+            return infos.ToArray();
+        }
+
+        public bool UpdateFields(UserFieldInfo info)
+        {
+            bool result = false;
+            try
+            {
+                SqlParameter[] para = new SqlParameter[17];
+                para[0] = new SqlParameter("@ID", info.ID);
+                para[1] = new SqlParameter("@FarmID", info.FarmID);
+                para[2] = new SqlParameter("@FieldID", info.FieldID);
+                para[3] = new SqlParameter("@SeedID", info.SeedID);
+                para[4] = new SqlParameter("@PlantTime", info.PlantTime.ToString());
+                para[5] = new SqlParameter("@AccelerateTime", info.AccelerateTime);
+                para[6] = new SqlParameter("@FieldValidDate", info.FieldValidDate);
+                para[7] = new SqlParameter("@PayTime", info.PayTime.ToString());
+                para[8] = new SqlParameter("@GainCount", info.GainCount);
+                para[9] = new SqlParameter("@AutoSeedID", info.AutoSeedID);
+                para[10] = new SqlParameter("@AutoFertilizerID", info.AutoFertilizerID);
+                para[11] = new SqlParameter("@AutoSeedIDCount", info.AutoSeedIDCount);
+                para[12] = new SqlParameter("@AutoFertilizerCount", info.AutoFertilizerCount);
+                para[13] = new SqlParameter("@isAutomatic", info.isAutomatic);
+                para[14] = new SqlParameter("@AutomaticTime", info.AutomaticTime.ToString());
+                para[15] = new SqlParameter("@IsExit", info.IsExit);
+                para[16] = new SqlParameter("@payFieldTime", info.payFieldTime);
+                result = db.RunProcedure("SP_Users_Fields_Update", para);
+                if (result)
+                    info.IsDirty = false;
+            }
+            catch (Exception e)
+            {
+                if (log.IsErrorEnabled)
+                    log.Error("SP_Users_Fields_Update", e);
+            }
+            return result;
+        }
+
+
     }
 }
