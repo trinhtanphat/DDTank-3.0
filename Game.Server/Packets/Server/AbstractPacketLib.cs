@@ -14,6 +14,8 @@ using Game.Server.SceneMarryRooms;
 using Game.Server.Quests;
 using Game.Server.Buffer;
 using System.Configuration;
+using System.Data;
+using System.Data.SqlClient;
 
 namespace Game.Base.Packets
 {
@@ -21,6 +23,101 @@ namespace Game.Base.Packets
     public class AbstractPacketLib : IPacketLib
     {
         private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+
+        private static readonly int[] VipExpFloors = new int[]
+        {
+            0, 200, 400, 800, 2000, 4000, 8000, 20000, 40000, 80000,
+            200000, 400000, 800000, 1200000, 1800000, 2600000, 3600000,
+            4800000, 6200000, 7800000
+        };
+
+        private sealed class VipSnapshot
+        {
+            public bool IsVip;
+            public int Level;
+            public int Exp;
+            public DateTime ExpireDay;
+            public DateTime LastDate;
+            public int NextLevelDays;
+            public bool CanTakeReward;
+        }
+
+        private static int GetVipFloor(int level)
+        {
+            if (level < 1) level = 1;
+            if (level > 20) level = 20;
+            return VipExpFloors[level - 1];
+        }
+
+        private static int GetVipNextLevelDays(int level, int exp)
+        {
+            if (level < 1 || level >= 20) return 0;
+            int next = GetVipFloor(level + 1);
+            int remaining = next - exp;
+            return remaining <= 0 ? 0 : (remaining + 9) / 10;
+        }
+
+        private VipSnapshot LoadVipSnapshot(int userId)
+        {
+            DateTime now = DateTime.Now;
+            VipSnapshot snapshot = new VipSnapshot
+            {
+                IsVip = false,
+                Level = 1,
+                Exp = 0,
+                ExpireDay = now.AddSeconds(-1),
+                LastDate = now,
+                NextLevelDays = 0,
+                CanTakeReward = false
+            };
+
+            try
+            {
+                string connectionString = ConfigurationManager.AppSettings["conString"];
+                if (String.IsNullOrEmpty(connectionString))
+                {
+                    ConnectionStringSettings settings = ConfigurationManager.ConnectionStrings["Db_TankConnectionString"];
+                    if (settings != null) connectionString = settings.ConnectionString;
+                }
+                if (String.IsNullOrEmpty(connectionString)) return snapshot;
+
+                using (SqlConnection connection = new SqlConnection(connectionString))
+                using (SqlCommand command = new SqlCommand(
+                    "SELECT TOP 1 typeVIP,VIPLevel,VIPExp,VIPExpireDay,VIPLastdate,VIPNextLevelDaysNeeded,CanTakeVipReward " +
+                    "FROM dbo.Sys_VIP_Info WHERE UserID=@UserID", connection))
+                {
+                    command.Parameters.Add("@UserID", SqlDbType.Int).Value = userId;
+                    connection.Open();
+                    using (SqlDataReader reader = command.ExecuteReader())
+                    {
+                        if (!reader.Read()) return snapshot;
+                        int level = reader["VIPLevel"] == DBNull.Value ? 1 : Convert.ToInt32(reader["VIPLevel"]);
+                        if (level < 1) level = 1;
+                        if (level > 20) level = 20;
+                        int exp = reader["VIPExp"] == DBNull.Value ? 0 : Convert.ToInt32(reader["VIPExp"]);
+                        exp = Math.Max(exp, GetVipFloor(level));
+                        DateTime expire = reader["VIPExpireDay"] == DBNull.Value ? now.AddSeconds(-1) : Convert.ToDateTime(reader["VIPExpireDay"]);
+                        DateTime last = reader["VIPLastdate"] == DBNull.Value ? now : Convert.ToDateTime(reader["VIPLastdate"]);
+                        int typeVip = reader["typeVIP"] == DBNull.Value ? 0 : Convert.ToInt32(reader["typeVIP"]);
+
+                        snapshot.IsVip = typeVip > 0 && expire >= now;
+                        snapshot.Level = level;
+                        snapshot.Exp = exp;
+                        snapshot.ExpireDay = expire;
+                        snapshot.LastDate = last;
+                        snapshot.NextLevelDays = snapshot.IsVip ? GetVipNextLevelDays(level, exp) : 0;
+                        snapshot.CanTakeReward = snapshot.IsVip && reader["CanTakeVipReward"] != DBNull.Value && Convert.ToBoolean(reader["CanTakeVipReward"]);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                if (log.IsWarnEnabled)
+                    log.Warn("Unable to load VIP snapshot for user " + userId, ex);
+            }
+
+            return snapshot;
+        }
 
         protected readonly GameClient m_gameClient;
 
@@ -167,14 +264,15 @@ namespace Game.Base.Packets
             //_loc_3.VIPLevel = _loc_2.readInt();
             //_loc_3.VIPExp = _loc_2.readInt();
             //_loc_3.VIPExpireDay = _loc_2.readDate();
+            VipSnapshot vip = LoadVipSnapshot(m_gameClient.Player.PlayerCharacter.ID);
             pkg.WriteString("Master");
             pkg.WriteInt(5);
             pkg.WriteString("HoNorMaster");
-            pkg.WriteDateTime(DateTime.Now.AddDays(50));
-            pkg.WriteBoolean(true);
-            pkg.WriteInt(5);
-            pkg.WriteInt(50000);
-            pkg.WriteDateTime(DateTime.Now.AddDays(50));
+            pkg.WriteDateTime(DateTime.Now);
+            pkg.WriteBoolean(vip.IsVip);
+            pkg.WriteInt(vip.Level);
+            pkg.WriteInt(vip.Exp);
+            pkg.WriteDateTime(vip.ExpireDay);
 
             //_loc_3.LastDate = _loc_2.readDate();
             //_loc_3.VIPNextLevelDaysNeeded = _loc_2.readInt();
@@ -183,10 +281,10 @@ namespace Game.Base.Packets
             //_loc_3.OptionOnOff = _loc_2.readInt();
             //_loc_3.AchievementPoint = _loc_2.readInt();
             //_loc_3.honor = _loc_2.readUTF();
-            pkg.WriteDateTime(DateTime.Now.AddDays(50));
-            pkg.WriteInt(50);
+            pkg.WriteDateTime(vip.LastDate);
+            pkg.WriteInt(vip.NextLevelDays);
             pkg.WriteDateTime(DateTime.Now);
-            pkg.WriteBoolean(false);
+            pkg.WriteBoolean(vip.CanTakeReward);
             pkg.WriteInt(1599);
             pkg.WriteInt(1599);
             pkg.WriteString("honor");
