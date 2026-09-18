@@ -11,5 +11,5 @@ $adminVipIndex=$raw.IndexOf('$adminVipDeploy=Join-Path $PSScriptRoot ''Deploy-DD
 if($mirrorIndex-lt0 -or $runtimeOverlayIndex-lt0 -or $clientOverlayIndex-lt0 -or $adminVipIndex-lt0){throw 'Web installer overlay ordering anchors are missing'}
 if(-not($mirrorIndex-lt$runtimeOverlayIndex -and $runtimeOverlayIndex-lt$clientOverlayIndex -and $clientOverlayIndex-lt$adminVipIndex)){throw 'Client wind/aim overlay must run after all static/runtime mirrors and before AdminGunny deploy'}
 
-foreach($forbidden in @("[string]`$PublicIp='103.9.156.181'",'Request.sln','RenRenAssistant','Tank.SNSAssistant')){if($raw -match [regex]::Escape($forbidden)){throw "Web installer contains forbidden legacy coupling: $forbidden"}}
+foreach($forbidden in @("[string]`$PublicIp='103.9.156.181'",'Request.sln','RenRenAssistant','Tank.SNSAssistant','Instance config apply failed: $LASTEXITCODE')){if($raw -match [regex]::Escape($forbidden)){throw "Web installer contains forbidden legacy coupling: $forbidden"}}
 Write-Host 'PASS: DDTank30 web installer consumes the single instance manifest.'

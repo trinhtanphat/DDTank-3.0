@@ -82,8 +82,11 @@ foreach($css in $legacyLoopCss){
 }
 & robocopy $requestProject $requestRoot /MIR /R:2 /W:1 /NFL /NDL /NJH /NJS /NP /XD obj Tank.Request | Out-Null
 if($LASTEXITCODE-gt7){throw "Request artifact copy failed: $LASTEXITCODE"}
-& (Join-Path $PSScriptRoot 'Apply-DDTank30Instance.ps1') -ConfigPath $instance.ConfigPath -RepoRoot $repo -ApplyRuntime
-if($LASTEXITCODE-ne0){throw "Instance config apply failed: $LASTEXITCODE"}
+try {
+  & (Join-Path $PSScriptRoot 'Apply-DDTank30Instance.ps1') -ConfigPath $instance.ConfigPath -RepoRoot $repo -ApplyRuntime
+} catch {
+  throw "Instance config apply failed: $($_.Exception.Message)"
+}
 $legacyBootstrapAliases=@(
   @{Source=(Join-Path $webRoot 'gunny\Loading.swf');Target=(Join-Path $webRoot 'Loading.swf')},
   @{Source=(Join-Path $webRoot 'gunny\config.xml');Target=(Join-Path $webRoot 'config.xml')}
