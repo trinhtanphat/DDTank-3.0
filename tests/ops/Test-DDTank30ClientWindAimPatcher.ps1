@@ -27,7 +27,8 @@ foreach ($parameter in @(
     '[string]$JavaExe',
     '[string]$FfdecJar',
     '[string]$ExpectedInputSha256',
-    '[string]$ExpectedOutputSha256'
+    '[string]$ExpectedOutputSha256',
+    '[string]$ResourceBaseUrl'
 )) {
     Require-Text $parameter "Missing patcher parameter contract: $parameter"
 }
@@ -41,7 +42,7 @@ Require-Text '[Array]::Copy($encoded, 21, $decoded, 124, $encoded.Length - 142)'
 Require-Text '[Array]::Copy($raw, 124, $encoded, 21, $raw.Length - 124)' 'ALM payload encode contract missing.'
 Require-Text '[Array]::Copy($raw, 3, $encoded, $encoded.Length - 121, 121)' 'ALM trailer encode contract missing.'
 
-Require-Text '''game.objects.GameLocalPlayer,game.view.VaneView''' 'Expected client classes are not selected for patching.'
+Require-Text '''game.objects.GameLocalPlayer,game.view.VaneView,ddt.manager.PathManager''' 'Expected client classes are not selected for patching.'
 Require-Text 'sendGameCMDDirection(info.direction);' 'Mid-volley left/right direction packet contract missing.'
 Require-Text 'this._shootCount < this.localPlayer.shootCount' 'Remaining-ammo direction guard missing.'
 Require-Text '_loc2_ = shootPoint();' 'Per-projectile muzzle-point recomputation missing.'
@@ -53,6 +54,10 @@ Require-Text 'this._shootTimer.stop();' 'Final-projectile timer stop missing.'
 
 Require-Text 'param3 = [param1 >= 0,0,0,0];' 'Wind direction fallback contract missing.'
 Require-Text 'this._zeroTxt.text = this.addZero(param1);' 'Numeric wind display fallback contract missing.'
+Require-Text '$pathManagerSource' 'PathManager export contract missing.'
+Require-Text 'info.SITE = "' 'Resource host override assignment missing.'
+Require-Text 'ResourceBaseUrl must use http:// or https://.' 'Resource URL validation missing.'
+Require-Text 'RESOURCE_BASE_URL=' 'Resource-base verification output missing.'
 
 Require-Regex '\$patchedSwfSha\s+-eq\s+\$roundTripSha' 'ALM round-trip SHA verification missing.'
 Require-Text 'DDTANK30_CLIENT_WIND_AIM_PATCH=PASS' 'Success marker missing.'
