@@ -10,6 +10,7 @@ using Game.Logic;
 using Fighting.Server.Guild;
 using Fighting.Server.Games;
 using Bussiness.Managers;
+using Fighting.Server.GameObjects;
 
 namespace Fighting.Server.Rooms
 {
@@ -237,9 +238,35 @@ namespace Fighting.Server.Rooms
                     }
                 }
 
+                if (matchRoom == null && red.PlayerCount == 1 &&
+                    red.GameType != eGameType.Guild && tick >= red.BotFillEligibleTick)
+                {
+                    matchRoom = CreateBotRoom(red);
+                }
+
                 if (matchRoom != null)
                     StartMatchGame(red, matchRoom);
             }
+        }
+
+        private static ProxyRoom CreateBotRoom(ProxyRoom source)
+        {
+            List<IGamePlayer> sourcePlayers = source.GetPlayers();
+            if (sourcePlayers.Count != 1 || sourcePlayers[0].MainWeapon == null)
+                return null;
+
+            int botId = Interlocked.Decrement(ref m_botPlayerId);
+            BotProxyPlayer bot = new BotProxyPlayer(sourcePlayers[0], botId);
+            bot.ServerID = sourcePlayers[0].ServerID;
+
+            int roomId = NextRoomId();
+            ProxyRoom room = new ProxyRoom(roomId, -roomId,
+                new IGamePlayer[] { bot }, source.Client, true);
+            room.GameType = eGameType.Free;
+            room.GuildId = 0;
+            room.AvgLevel = bot.PlayerCharacter.Grade;
+            room.FightPower = bot.PlayerCharacter.FightPower;
+            return room;
         }
 
         private static void ClearRooms(long tick)
@@ -278,11 +305,11 @@ namespace Fighting.Server.Rooms
                 gameType = red.GameType;
             }
             BaseGame game = GameMgr.StartBattleGame(red.GetPlayers(), red, blue.GetPlayers(), blue, mapId, eRoomType.Match, gameType, 2);
-            if (game != null)
-            {
-                blue.StartGame(game);
-                red.StartGame(game);
-            }
+            if (game == null)
+                return;
+
+            blue.StartGame(game);
+            red.StartGame(game);
             if (game.GameType == eGameType.Guild)
             {
                 red.Client.SendConsortiaAlly(red.GetPlayers()[0].PlayerCharacter.ConsortiaID, blue.GetPlayers()[0].PlayerCharacter.ConsortiaID, game.Id);
