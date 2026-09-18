@@ -213,6 +213,10 @@
     <Compile Include="AI\NPC\ThirdSimpleBlowNpc.cs" />
     <Compile Include="AI\NPC\ThirdSimpleFixureLongNpc.cs" />
     <Compile Include="AI\NPC\ThirdTerrorBloodNpc.cs" />
+    <Compile Include="AI\NPC\PSMNpc5001Ai.cs" />
+    <Compile Include="AI\NPC\PSMNpc5002Ai.cs" />
+    <Compile Include="AI\NPC\PSMNpc5003Ai.cs" />
+    <Compile Include="AI\NPC\PSMNpc5004Ai.cs" />
     <Compile Include="Commands\TestCommands.cs" />
     <Compile Include="Commands\TestTaskCommand.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
