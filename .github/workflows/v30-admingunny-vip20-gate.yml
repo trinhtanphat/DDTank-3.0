@@ -1,13 +1,27 @@
-name: Gunny 3.0 Admin VIP20 gate
+name: Gunny 3.0 Admin web gate
 
 on:
   pull_request:
     paths:
+      - 'GameAdmin/Admin/Dashboard.aspx'
+      - 'GameAdmin/Admin/Dashboard.aspx.cs'
+      - 'GameAdmin/Admin/Dashboard.aspx.designer.cs'
+      - 'GameAdmin/Admin/PlayerTools.aspx'
+      - 'GameAdmin/Admin/PlayerTools.aspx.cs'
+      - 'GameAdmin/Admin/PlayerTools.aspx.designer.cs'
       - 'GameAdmin/Admin/SetVip.aspx'
       - 'GameAdmin/Admin/SetVip.aspx.cs'
       - 'GameAdmin/Admin/SetVip.aspx.designer.cs'
+      - 'GameAdmin/Account/Login.aspx'
+      - 'GameAdmin/Account/Login.aspx.cs'
+      - 'GameAdmin/Account/Login.aspx.designer.cs'
+      - 'GameAdmin/Account/Web.config'
       - 'GameAdmin/AdminGunny.csproj'
       - 'GameAdmin/Site.Master'
+      - 'GameAdmin/Web.config'
+      - 'deploy/Deploy-DDTank30AdminVip.ps1'
+      - 'deploy/Install-DDTank30Web.ps1'
+      - 'tests/v30-admingunny-dashboard-smoke.ps1'
       - 'tests/v30-admingunny-vip20-smoke.ps1'
       - '.github/workflows/v30-admingunny-vip20-gate.yml'
 
@@ -16,6 +30,8 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Validate Gunny 3.0 Admin VIP20 invariants
+      - name: Validate Gunny 3.0 Admin web invariants
         shell: pwsh
-        run: ./tests/v30-admingunny-vip20-smoke.ps1
+        run: |
+          ./tests/v30-admingunny-dashboard-smoke.ps1
+          ./tests/v30-admingunny-vip20-smoke.ps1
