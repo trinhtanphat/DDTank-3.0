@@ -20,7 +20,11 @@ namespace Fighting.Server.Rooms
 
         public static readonly int THREAD_INTERVAL = 40; // 40ms
 
-        public static readonly int PICK_UP_INTERVAL = 10 * 1000; // 10 s
+        public static readonly int PICK_UP_INTERVAL = 1000; // 1 s polling
+
+        public static readonly int BOT_FILL_WAIT_MS = 5000;
+
+        private static int m_botPlayerId = -1000000;
 
         public static readonly int CLEAR_ROOM_INTERVAL = 1000; // 5 mins
 
