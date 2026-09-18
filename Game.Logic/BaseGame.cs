@@ -405,27 +405,37 @@ namespace Game.Logic
             return null;
         }
 
+        internal static int EncodeWind(float wind)
+        {
+            return (int)Math.Round(wind * 10f, MidpointRounding.AwayFromZero);
+        }
+
         public float GetNextWind()
         {
-            int currentWind = (int)(Wind * 10);
-            int wind = 0;
-            if (currentWind > m_nextWind)
+            int currentWind = EncodeWind(Wind);
+
+            if (currentWind == m_nextWind)
             {
-                wind = currentWind - m_random.Next(11);
-                if (currentWind <= m_nextWind)
-                {
-                    m_nextWind = m_random.Next(-40, 40);
-                }
+                m_nextWind = m_random.Next(-40, 41);
             }
-            else
+
+            int delta = m_nextWind - currentWind;
+            if (delta == 0)
             {
-                wind = currentWind + m_random.Next(11);
-                if (currentWind >= m_nextWind)
-                {
-                    m_nextWind = m_random.Next(-40, 40);
-                }
+                return currentWind / 10f;
             }
-            return ((float)wind / 10);
+
+            int maxStep = Math.Min(10, Math.Abs(delta));
+            int step = m_random.Next(1, maxStep + 1);
+            int nextWind = currentWind + Math.Sign(delta) * step;
+
+            if ((delta > 0 && nextWind > m_nextWind) ||
+                (delta < 0 && nextWind < m_nextWind))
+            {
+                nextWind = m_nextWind;
+            }
+
+            return nextWind / 10f;
         }
 
         public void UpdateWind(float wind, bool sendToClient)
@@ -1423,7 +1433,7 @@ namespace Game.Logic
         {
             GSPacketIn pkg = new GSPacketIn((byte)ePackageType.GAME_CMD);
             pkg.WriteByte((byte)eTankCmdType.VANE);
-            pkg.WriteInt((int)(wind * 10));
+            pkg.WriteInt(EncodeWind(wind));
             SendToAll(pkg);
         }
 
@@ -1482,8 +1492,8 @@ namespace Game.Logic
             pkg.Parameter1 = living.Id;
             //pkg.Parameter2 = -1;
             pkg.WriteByte((byte)eTankCmdType.TURN);
-            pkg.WriteInt((int)(game.Wind * 10));
-            pkg.WriteBoolean(false);
+            pkg.WriteInt(EncodeWind(game.Wind));
+            pkg.WriteBoolean(EncodeWind(game.Wind) >= 0);
             pkg.WriteByte(0);
             pkg.WriteByte(0);
             pkg.WriteByte(0);

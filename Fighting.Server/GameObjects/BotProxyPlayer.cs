@@ -193,8 +193,13 @@ namespace Fighting.Server.GameObjects
         private static bool TryFindAccurateShot(Player player, Player target,
             out int force, out int angle)
         {
-            float[] timeSeeds = { 0.6f, 0.7f, 0.8f, 0.9f, 1.0f, 1.1f, 1.25f };
-            int[] yOffsets = { 0, -8, 8, -16, 16, -28, 28 };
+            double windStrength = player.Game == null ? 0 : Math.Abs(player.Game.Wind);
+            float[] timeSeeds = windStrength >= 2.5
+                ? new float[] { 0.45f, 0.55f, 0.65f, 0.75f, 0.85f, 0.95f, 1.05f, 1.2f, 1.4f, 1.65f, 1.9f }
+                : new float[] { 0.5f, 0.6f, 0.7f, 0.8f, 0.9f, 1.0f, 1.1f, 1.25f, 1.45f };
+            int[] yOffsets = windStrength >= 2.5
+                ? new int[] { 0, -8, 8, -16, 16, -28, 28, -42, 42, -60, 60 }
+                : new int[] { 0, -8, 8, -16, 16, -28, 28, -42, 42 };
 
             foreach (int yOffset in yOffsets)
             {
@@ -441,16 +446,12 @@ namespace Fighting.Server.GameObjects
             }
         }
 
-        public void TakeTurn(PVPGame game, Player player)
+        private bool TryExecuteBestShot(PVPGame game, Player player, Player target,
+            bool allowOffensiveSkill)
         {
-            TryUseSupportSkill(game, player);
-
-            Player target = FindBestTarget(game, player);
-            if (target == null)
-            {
-                player.Skip(0);
-                return;
-            }
+            if (game == null || player == null || target == null ||
+                !player.IsLiving || !player.IsAttacking || player.ShootCount <= 0)
+                return false;
 
             player.Direction = target.X >= player.X ? 1 : -1;
 
@@ -458,10 +459,11 @@ namespace Fighting.Server.GameObjects
             int angle;
             if (TryFindAccurateShot(player, target, out force, out angle))
             {
-                TryUseOffensiveSkill(player, target);
+                if (allowOffensiveSkill)
+                    TryUseOffensiveSkill(player, target);
+
                 Point shootPoint = player.GetShootPoint();
-                player.Shoot(shootPoint.X, shootPoint.Y, force, angle);
-                return;
+                return player.Shoot(shootPoint.X, shootPoint.Y, force, angle);
             }
 
             int clearForce;
@@ -474,33 +476,80 @@ namespace Fighting.Server.GameObjects
             int flyAngle = 0;
             double flyImprovement = 0;
             bool canFly = false;
-            if (m_flyUses < 2)
+            if (allowOffensiveSkill && m_flyUses < 2)
                 canFly = TryFindFlyShot(player, target,
                     out flyForce, out flyAngle, out flyImprovement);
 
             if (canClear && (clearProgress >= 45 || !canFly))
             {
                 Point shootPoint = player.GetShootPoint();
-                player.Shoot(shootPoint.X, shootPoint.Y, clearForce, clearAngle);
-                return;
+                return player.Shoot(shootPoint.X, shootPoint.Y, clearForce, clearAngle);
             }
 
             if (canFly && TryUseTemplate(player, FlyTemplateId))
             {
                 m_flyUses++;
                 Point shootPoint = player.GetShootPoint();
-                player.Shoot(shootPoint.X, shootPoint.Y, flyForce, flyAngle);
-                return;
+                return player.Shoot(shootPoint.X, shootPoint.Y, flyForce, flyAngle);
             }
 
             if (canClear)
             {
                 Point shootPoint = player.GetShootPoint();
-                player.Shoot(shootPoint.X, shootPoint.Y, clearForce, clearAngle);
+                return player.Shoot(shootPoint.X, shootPoint.Y, clearForce, clearAngle);
+            }
+
+            return false;
+        }
+
+        private void ScheduleRemainingShots(PVPGame game, Player player)
+        {
+            if (game == null || player == null || !player.IsLiving ||
+                !player.IsAttacking || player.ShootCount <= 0)
+                return;
+
+            player.CallFuction(new LivingCallBack(delegate
+            {
+                if (!player.IsLiving || !player.IsAttacking || player.ShootCount <= 0)
+                    return;
+
+                Player target = FindBestTarget(game, player);
+                if (target == null)
+                {
+                    player.Skip(0);
+                    return;
+                }
+
+                if (TryExecuteBestShot(game, player, target, false))
+                {
+                    ScheduleRemainingShots(game, player);
+                }
+                else
+                {
+                    player.Skip(0);
+                }
+            }), 650);
+        }
+
+        public void TakeTurn(PVPGame game, Player player)
+        {
+            TryUseSupportSkill(game, player);
+
+            Player target = FindBestTarget(game, player);
+            if (target == null)
+            {
+                player.Skip(0);
+                return;
+            }
+
+            if (TryExecuteBestShot(game, player, target, true))
+            {
+                ScheduleRemainingShots(game, player);
                 return;
             }
 
             player.Skip(0);
         }
+
     }
 }

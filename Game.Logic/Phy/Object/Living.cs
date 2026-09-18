@@ -534,42 +534,49 @@ namespace Game.Logic.Phy.Object
                 return;
 
             BallInfo ballInfo = BallMgr.FindBall(bombId);
-            if (m_game != null && ballInfo != null)
-            {
-                Map map = m_game.Map;
-                Point sp = GetShootPoint();
-                float dx = x - sp.X;
-                float dy = y - sp.Y;
-                float arf = map.airResistance * ballInfo.DragIndex;
-                float gf = map.gravity * ballInfo.Weight * ballInfo.Mass;
-                float wf = map.wind * ballInfo.Wind;
-                float mass = ballInfo.Mass;
-                for (float t = time; t <= 4; t += 0.6F)
-                {
-                    double vx = ComputeVx(dx, mass, arf, wf, t);
-                    double vy = ComputeVy(dy, mass, arf, gf, t);
+            if (m_game == null || ballInfo == null)
+                return;
 
-                    if (vy < 0 && vx * m_direction > 0)
+            Map map = m_game.Map;
+            Point initialShootPoint = GetShootPoint();
+            Direction = x >= initialShootPoint.X ? 1 : -1;
+            Point sp = GetShootPoint();
+
+            float dx = x - sp.X;
+            float dy = y - sp.Y;
+            float arf = map.airResistance * ballInfo.DragIndex;
+            float gf = map.gravity * ballInfo.Weight * ballInfo.Mass;
+            float wf = map.wind * ballInfo.Wind;
+            float mass = ballInfo.Mass;
+
+            // Legacy NPC scripts use milliseconds; newer bot code uses seconds.
+            float minFlightTime = minTime >= 100 ? minTime / 1000f : 0.25f;
+            float maxFlightTime = maxTime >= 100 ? maxTime / 1000f : maxTime;
+            minFlightTime = Math.Max(0.25f, minFlightTime);
+            maxFlightTime = Math.Min(8f, Math.Max(minFlightTime, maxFlightTime));
+
+            float startTime = Math.Max(minFlightTime, Math.Min(maxFlightTime, Math.Max(0.25f, time)));
+            for (float t = startTime; t <= maxFlightTime + 0.001f; t += 0.10f)
+            {
+                double vx = ComputeVx(dx, mass, arf, wf, t);
+                double vy = ComputeVy(dy, mass, arf, gf, t);
+
+                if (vy < 0 && vx * m_direction > 0)
+                {
+                    double totalForce = Math.Sqrt(vx * vx + vy * vy);
+                    if (totalForce > 0 && totalForce < 2000)
                     {
-                        double tf = Math.Sqrt(vx * vx + vy * vy);
-                        if (tf < 2000)
-                        {
-                            //Console.WriteLine(string.Format("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< vx:{0}   vy:{1}", vx, vy));
-                            force = (int)tf;
-                            angle = (int)(Math.Atan(vy / vx) / Math.PI * 180);
-                            if (vx < 0)
-                            {
-                                angle = angle + 180;
-                            }
-                            break;
-                        }
+                        force = (int)Math.Round(totalForce);
+                        angle = (int)Math.Round(Math.Atan2(vy, vx) / Math.PI * 180.0);
+                        break;
                     }
                 }
-                x = sp.X;
-                y = sp.Y;
             }
 
+            x = sp.X;
+            y = sp.Y;
         }
+
         public bool ShootPoint(int x, int y, int bombId, int minTime, int maxTime, int bombCount, float time, int delay)
         {
             m_game.AddAction(new LivingShootAction(this, bombId, x, y, 0, 0, bombCount, minTime, maxTime, time, delay));
@@ -620,6 +627,12 @@ namespace Game.Logic.Phy.Object
                 GSPacketIn pkg = new GSPacketIn((byte)ePackageType.GAME_CMD, Id);
                 pkg.Parameter1 = Id;
                 pkg.WriteByte((byte)eTankCmdType.FIRE);
+                int wind = BaseGame.EncodeWind(m_game.Wind);
+                pkg.WriteInt(wind);
+                pkg.WriteBoolean(wind >= 0);
+                pkg.WriteByte(0);
+                pkg.WriteByte(0);
+                pkg.WriteByte(0);
                 pkg.WriteInt(bombCount);
 
                 float lifeTime = 0;

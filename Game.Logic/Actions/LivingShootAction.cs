@@ -49,7 +49,7 @@ namespace Game.Logic.Actions
 
         protected override void ExecuteImp(BaseGame game, long tick)
         {
-            if (m_living is SimpleBoss)
+            if (m_force == 0 && m_angle == 0 && m_minTime < m_maxTime)
             {
                 m_living.GetShootForceAndAngle(ref m_tx, ref m_ty, m_bombId, m_minTime, m_maxTime, m_bombCount, m_Time, ref m_force, ref m_angle);
             }

@@ -72,7 +72,8 @@ jobs:
           $ErrorActionPreference = 'Stop'
           $tests = @(
             'tests/pvp-smart-bot-smoke.ps1',
-            'tests/pvp-bot-terrain-clear-smoke.ps1'
+            'tests/pvp-bot-terrain-clear-smoke.ps1',
+            'tests/v30-bot-wind-aim-smoke.ps1'
           )
           foreach ($test in $tests) {
             Write-Host "=== $test ==="
