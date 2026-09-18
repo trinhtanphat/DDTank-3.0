@@ -66,8 +66,8 @@ foreach($token in @(
   if($raw -notmatch [regex]::Escape($token)){throw "Web installer missing token: $token"}
 }
 
-$applyInstanceIndex=$raw.IndexOf("& (Join-Path $PSScriptRoot 'Apply-DDTank30Instance.ps1')")
-$ballListBuilderIndex=$raw.IndexOf("$ballListBuilder=Join-Path $PSScriptRoot 'Build-DDTank30BallListCache.ps1'")
+$applyInstanceIndex=$raw.IndexOf('& (Join-Path $PSScriptRoot ''Apply-DDTank30Instance.ps1'')')
+$ballListBuilderIndex=$raw.IndexOf('$ballListBuilder=Join-Path $PSScriptRoot ''Build-DDTank30BallListCache.ps1''')
 $iisImportIndex=$raw.IndexOf('Import-Module WebAdministration')
 if($applyInstanceIndex-lt0 -or $ballListBuilderIndex-lt0 -or $iisImportIndex-lt0){throw 'BallList cache rebuild ordering anchors are missing'}
 if(-not($applyInstanceIndex-lt$ballListBuilderIndex -and $ballListBuilderIndex-lt$iisImportIndex)){throw 'BallList cache must rebuild after instance config apply and before IIS provisioning'}
