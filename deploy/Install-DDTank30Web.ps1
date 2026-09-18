@@ -53,6 +53,15 @@ foreach($css in $legacyLoopCss){
 if($LASTEXITCODE-gt7){throw "Request artifact copy failed: $LASTEXITCODE"}
 & (Join-Path $PSScriptRoot 'Apply-DDTank30Instance.ps1') -ConfigPath $instance.ConfigPath -RepoRoot $repo -ApplyRuntime
 if($LASTEXITCODE-ne0){throw "Instance config apply failed: $LASTEXITCODE"}
+$legacyBootstrapAliases=@(
+  @{Source=(Join-Path $webRoot 'gunny\Loading.swf');Target=(Join-Path $webRoot 'Loading.swf')},
+  @{Source=(Join-Path $webRoot 'gunny\config.xml');Target=(Join-Path $webRoot 'config.xml')}
+ )
+foreach($alias in $legacyBootstrapAliases){
+  if(-not(Test-Path -LiteralPath $alias.Source -PathType Leaf)){throw "Legacy bootstrap source missing: $($alias.Source)"}
+  Copy-Item -LiteralPath $alias.Source -Destination $alias.Target -Force
+  if((Get-FileHash -LiteralPath $alias.Source -Algorithm SHA256).Hash-ne(Get-FileHash -LiteralPath $alias.Target -Algorithm SHA256).Hash){throw "Legacy bootstrap alias hash mismatch: $($alias.Target)"}
+}
 Import-Module WebAdministration
 foreach($pool in @($staticPool,$requestPool)){if(-not(Test-Path "IIS:\AppPools\$pool")){New-WebAppPool -Name $pool|Out-Null}}
 Set-ItemProperty "IIS:\AppPools\$staticPool" -Name managedRuntimeVersion -Value ''
