@@ -260,6 +260,7 @@
     <Compile Include="Packets\Client\ClientErrorLog.cs" />
     <Compile Include="Packets\Client\ItemFusionHandler.cs" />
     <Compile Include="Packets\Client\OpenUpArkHandler.cs" />
+    <Compile Include="Packets\Client\OpenVipHandler.cs" />
     <Compile Include="Packets\Client\PropDeleteHandler.cs" />
     <Compile Include="Packets\Client\QuestAddHandler.cs" />
     <Compile Include="Packets\Client\QuestFinishHandler.cs" />
