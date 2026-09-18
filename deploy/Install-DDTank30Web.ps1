@@ -146,6 +146,11 @@ if(-not(Test-Path -LiteralPath $ballListBuilder -PathType Leaf)){throw "Missing 
 & $ballListBuilder -RequestRoot $requestRoot -ExpectedDatabase 'Db_Tank_V30' -ExpectedMinimumCount 300
 $ballListPath=Join-Path $requestRoot 'BallList.xml'
 if(-not(Test-Path -LiteralPath $ballListPath -PathType Leaf)){throw "BallList cache missing after rebuild: $ballListPath"}
+$templateCacheBuilder=Join-Path $PSScriptRoot 'Build-DDTank30TemplateCache.ps1'
+if(-not(Test-Path -LiteralPath $templateCacheBuilder -PathType Leaf)){throw "Missing item template cache builder: $templateCacheBuilder"}
+& $templateCacheBuilder -RequestRoot $requestRoot -ExpectedDatabase 'Db_Tank_V30' -ExpectedMinimumCount 3000 -ExpectedMinimumWeaponCount 120
+$templateCachePath=Join-Path $requestRoot 'TemplateAlllist.xml'
+if(-not(Test-Path -LiteralPath $templateCachePath -PathType Leaf)){throw "TemplateAlllist cache missing after rebuild: $templateCachePath"}
 $legacyBootstrapAliases=@(
   @{Source=(Join-Path $webRoot 'gunny\Loading.swf');Target=(Join-Path $webRoot 'Loading.swf')},
   @{Source=(Join-Path $webRoot 'gunny\config.xml');Target=(Join-Path $webRoot 'config.xml')}

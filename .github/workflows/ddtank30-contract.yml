@@ -34,6 +34,7 @@ jobs:
             'Test-DDTank30WcfIsolation.ps1',
             'Test-DDTank30WebInstaller.ps1',
             'Test-DDTank30BallListCache.ps1',
+            'Test-DDTank30TemplateCache.ps1',
             'Test-DDTank30RuntimeWebAssets.ps1',
             'Test-DDTank30WeeklyAssets.ps1',
             'Test-DDTank30FirstLoginFlow.ps1',

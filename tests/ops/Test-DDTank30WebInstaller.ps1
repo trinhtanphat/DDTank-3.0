@@ -61,16 +61,21 @@ foreach($token in @(
   'Build-DDTank30BallListCache.ps1',
   "-ExpectedDatabase 'Db_Tank_V30'",
   '-ExpectedMinimumCount 300',
-  'BallList cache missing after rebuild'
+  'BallList cache missing after rebuild',
+  'Build-DDTank30TemplateCache.ps1',
+  "-ExpectedMinimumCount 3000",
+  "-ExpectedMinimumWeaponCount 120",
+  'TemplateAlllist cache missing after rebuild'
 )){
   if($raw -notmatch [regex]::Escape($token)){throw "Web installer missing token: $token"}
 }
 
 $applyInstanceIndex=$raw.IndexOf('& (Join-Path $PSScriptRoot ''Apply-DDTank30Instance.ps1'')')
 $ballListBuilderIndex=$raw.IndexOf('$ballListBuilder=Join-Path $PSScriptRoot ''Build-DDTank30BallListCache.ps1''')
+$templateCacheBuilderIndex=$raw.IndexOf('$templateCacheBuilder=Join-Path $PSScriptRoot ''Build-DDTank30TemplateCache.ps1''')
 $iisImportIndex=$raw.IndexOf('Import-Module WebAdministration')
-if($applyInstanceIndex-lt0 -or $ballListBuilderIndex-lt0 -or $iisImportIndex-lt0){throw 'BallList cache rebuild ordering anchors are missing'}
-if(-not($applyInstanceIndex-lt$ballListBuilderIndex -and $ballListBuilderIndex-lt$iisImportIndex)){throw 'BallList cache must rebuild after instance config apply and before IIS provisioning'}
+if($applyInstanceIndex-lt0 -or $ballListBuilderIndex-lt0 -or $templateCacheBuilderIndex-lt0 -or $iisImportIndex-lt0){throw 'Request metadata cache rebuild ordering anchors are missing'}
+if(-not($applyInstanceIndex-lt$ballListBuilderIndex -and $ballListBuilderIndex-lt$templateCacheBuilderIndex -and $templateCacheBuilderIndex-lt$iisImportIndex)){throw 'Request metadata caches must rebuild after instance config apply and before IIS provisioning'}
 
 $mirrorIndex=$raw.IndexOf('& robocopy $externalWeb $webRoot /MIR')
 $runtimeOverlayIndex=$raw.IndexOf('$runtimeWeb=Join-Path $repo ''runtime-assets\v30''')
