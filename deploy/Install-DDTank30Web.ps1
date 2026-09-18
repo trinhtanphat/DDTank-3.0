@@ -30,9 +30,25 @@ if($LASTEXITCODE-gt7){throw "Static wwwroot copy failed: $LASTEXITCODE"}
 $coreTarget=Join-Path $webRoot $coreRel;if(-not(Test-Path -LiteralPath $coreTarget -PathType Leaf)){throw "Canonical core asset missing after webroot copy: $coreTarget"}
 $coreTargetHash=(Get-FileHash -LiteralPath $coreTarget -Algorithm SHA256).Hash.ToUpperInvariant();if($coreTargetHash-ne$coreExpectedSha){throw "Canonical core asset hash mismatch after webroot copy: $coreTargetHash"}
 $runtimeWeb=Join-Path $repo 'runtime-assets\v30'
+$criticalRuntimeAssets=@(
+  @{Rel='gunny\2.png';Sha='A6FB0B6FD33D752E211B7F0B92ADB5B1153B15C2D7E9743E8643DE714E0D82F6'},
+  @{Rel='gunny\ui\vietnam\xml\xml.png';Sha='B80EB789F02DC2ECC3B4E077DC9E4C7AB70F608806677FC75710CBE2FAB27908'}
+)
 if(Test-Path $runtimeWeb){
+  foreach($asset in $criticalRuntimeAssets){
+    $source=Join-Path $runtimeWeb $asset.Rel
+    if(-not(Test-Path -LiteralPath $source -PathType Leaf)){throw "Critical runtime asset missing: $source"}
+    $sha=(Get-FileHash -LiteralPath $source -Algorithm SHA256).Hash.ToUpperInvariant()
+    if($sha-ne$asset.Sha){throw "Critical runtime asset hash mismatch before overlay: $($asset.Rel) => $sha"}
+  }
   & robocopy $runtimeWeb $webRoot /E /R:2 /W:1 /NFL /NDL /NJH /NJS /NP | Out-Null
   if($LASTEXITCODE-gt7){throw "Runtime web asset overlay failed: $LASTEXITCODE"}
+  foreach($asset in $criticalRuntimeAssets){
+    $target=Join-Path $webRoot $asset.Rel
+    if(-not(Test-Path -LiteralPath $target -PathType Leaf)){throw "Critical runtime asset missing after overlay: $target"}
+    $sha=(Get-FileHash -LiteralPath $target -Algorithm SHA256).Hash.ToUpperInvariant()
+    if($sha-ne$asset.Sha){throw "Critical runtime asset hash mismatch after overlay: $($asset.Rel) => $sha"}
+  }
 }
 $adminVipDeploy=Join-Path $PSScriptRoot 'Deploy-DDTank30AdminVip.ps1'
 if(-not(Test-Path -LiteralPath $adminVipDeploy -PathType Leaf)){throw "Missing AdminGunny VIP20 deploy script: $adminVipDeploy"}

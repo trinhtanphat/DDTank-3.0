@@ -115,7 +115,7 @@ function Set-DDTank30ConfigSet([string]$Root,[switch]$RuntimeLayout) {
 }
 
 function Set-RequestWebConfig([string]$Path) {
-    $base = "http://$($instance.PublicHost):$($instance.WebPort)"
+    $base = $instance.PublicWebBase
     $values = @{
         ExitURL = "$base/"
         ExitURL_a = "$base/?username={0}&site={1}"
@@ -155,7 +155,7 @@ function Remove-DDTank30ThirdPartyBranding([string]$Path) {
 
 function Set-DDTank30WebRoot([string]$WebRoot) {
     if (-not (Test-Path -LiteralPath $WebRoot)) { return }
-    $base = "http://$($instance.PublicHost):$($instance.WebPort)"
+    $base = $instance.PublicWebBase
     $legacyHost = Get-DDTank30LegacyWebHost $WebRoot
 
     $iisStart = Join-Path $WebRoot 'gunny\iisstart.htm'
@@ -182,6 +182,18 @@ function Set-DDTank30WebRoot([string]$WebRoot) {
         FILL_PATH = "$base/gunny/"
     }
     foreach ($key in $xmlValues.Keys) { Set-XmlValueAttributeIfPresent $config $key $xmlValues[$key] }
+
+    $legacyBootstrapAliases=@(
+        @{Source=(Join-Path $WebRoot 'gunny\Loading.swf');Target=(Join-Path $WebRoot 'Loading.swf')},
+        @{Source=$config;Target=(Join-Path $WebRoot 'config.xml')}
+    )
+    foreach($alias in $legacyBootstrapAliases){
+        if(-not(Test-Path -LiteralPath $alias.Source -PathType Leaf)){throw "Legacy bootstrap source missing: $($alias.Source)"}
+        Copy-Item -LiteralPath $alias.Source -Destination $alias.Target -Force
+        if((Get-FileHash -LiteralPath $alias.Source -Algorithm SHA256).Hash-ne(Get-FileHash -LiteralPath $alias.Target -Algorithm SHA256).Hash){
+            throw "Legacy bootstrap alias hash mismatch: $($alias.Target)"
+        }
+    }
 
     $gunnyWeb = Join-Path $WebRoot 'gunny\Web.config'
     Set-AppSettingValueIfPresent $gunnyWeb 'LoginUrl' "$base/Request/createLogin.aspx"
@@ -274,6 +286,44 @@ if ($ApplyIis) {
         if ($existing) { Set-ItemProperty ("IIS:\Sites\$site\" + $app.Name) -Name applicationPool -Value $pool }
         else { New-WebApplication -Site $site -Name $app.Name -PhysicalPath $app.Path -ApplicationPool $pool | Out-Null }
     }
+    if (-not [string]::IsNullOrWhiteSpace($instance.PublicWebSite) -and -not [string]::IsNullOrWhiteSpace($instance.PublicWebPath)) {
+        $publicSite = $instance.PublicWebSite
+        $publicPath = $instance.PublicWebPath.Trim('/').Trim('\')
+        if ([string]::IsNullOrWhiteSpace($publicPath)) { throw 'ddtank30.publicWebPath cannot resolve to an empty path.' }
+        if ($publicPath.Contains('/') -or $publicPath.Contains('\')) { throw 'ddtank30.publicWebPath must be a single IIS application segment.' }
+        if (-not (Test-Path "IIS:\Sites\$publicSite")) { throw "Public IIS site not found: $publicSite" }
+
+        $publicRoot = Join-Path $instance.Root 'webroot'
+        $staticPool = 'DDTank30StaticPool'
+        $publicAppPath = '/' + $publicPath
+        $publicApp = Get-WebApplication -Site $publicSite | Where-Object { $_.Path -ieq $publicAppPath }
+        if (-not $publicApp) {
+            New-WebApplication -Site $publicSite -Name $publicPath -PhysicalPath $publicRoot -ApplicationPool $staticPool | Out-Null
+        } else {
+            Set-ItemProperty ("IIS:\Sites\$publicSite\$publicPath") -Name applicationPool -Value $staticPool
+            $actualPublicRoot = [Environment]::ExpandEnvironmentVariables([string]$publicApp.PhysicalPath)
+            if ([IO.Path]::GetFullPath($actualPublicRoot) -ne [IO.Path]::GetFullPath($publicRoot)) {
+                throw "Public DDTank30 alias $publicAppPath points to unexpected path: $actualPublicRoot"
+            }
+        }
+
+        foreach ($app in @(
+            @{ Name='Request'; Path=(Join-Path $instance.Root 'webapps\Request') },
+            @{ Name='gunny'; Path=(Join-Path $instance.Root 'webroot\gunny') },
+            @{ Name='Register'; Path=(Join-Path $instance.Root 'webroot\Register') },
+            @{ Name='admingunny'; Path=(Join-Path $instance.Root 'webroot\admingunny') }
+        )) {
+            if (-not (Test-Path -LiteralPath $app.Path)) { continue }
+            $nestedName = "$publicPath/$($app.Name)"
+            $nestedPath = '/' + $nestedName
+            $nested = Get-WebApplication -Site $publicSite | Where-Object { $_.Path -ieq $nestedPath }
+            if ($nested) {
+                Set-ItemProperty ("IIS:\Sites\$publicSite\$publicPath\" + $app.Name) -Name applicationPool -Value $pool
+            } else {
+                New-WebApplication -Site $publicSite -Name $nestedName -PhysicalPath $app.Path -ApplicationPool $pool | Out-Null
+            }
+        }
+    }
 }
 
-Write-Host "DDTANK30_INSTANCE_APPLY=PASS host=$($instance.PublicHost) web=$($instance.WebPort) game=$($instance.RoadPort) config=$($instance.ConfigPath)"
+Write-Host "DDTANK30_INSTANCE_APPLY=PASS host=$($instance.PublicHost) web=$($instance.WebPort) publicWeb=$($instance.PublicWebBase) game=$($instance.RoadPort) config=$($instance.ConfigPath)"

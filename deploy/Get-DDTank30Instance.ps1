@@ -11,6 +11,11 @@ function Get-DDTank30Instance {
     if (-not $all.publicHost) { throw 'Instance config is missing publicHost.' }
     if (-not $all.ddtank30) { throw 'Instance config is missing ddtank30.' }
     $d = $all.ddtank30
+    $defaultPublicWebBase = "http://$($all.publicHost):$($d.webPort)"
+    $publicWebBase = if ($d.publicWebBase) { [string]$d.publicWebBase } else { $defaultPublicWebBase }
+    $publicWebBase = $publicWebBase.TrimEnd('/')
+    $publicWebSite = if ($d.publicWebSite) { [string]$d.publicWebSite } else { '' }
+    $publicWebPath = if ($d.publicWebPath) { [string]$d.publicWebPath } else { '' }
     foreach ($name in @('root','webSite','webPort','roadPort','centerHost','centerPort','fightHost','fightPort','centerWcfHttpPort','centerWcfTcpPort')) {
         if ($null -eq $d.$name -or [string]::IsNullOrWhiteSpace([string]$d.$name)) { throw "ddtank30.$name is required." }
     }
@@ -20,6 +25,9 @@ function Get-DDTank30Instance {
         Root = [string]$d.root
         WebSite = [string]$d.webSite
         WebPort = [int]$d.webPort
+        PublicWebBase = $publicWebBase
+        PublicWebSite = $publicWebSite
+        PublicWebPath = $publicWebPath
         RoadPort = [int]$d.roadPort
         CenterHost = [string]$d.centerHost
         CenterPort = [int]$d.centerPort
