@@ -184,6 +184,7 @@
     </Compile>
     <Compile Include="Packets\Server\ConsolePacketLib.cs" />
     <Compile Include="Quests\BaseCondition.cs" />
+    <Compile Include="Quests\FightWithPetCondition.cs" />
     <Compile Include="Quests\BaseQuest.cs" />
     <Compile Include="Quests\ClientModifyCondition.cs" />
     <Compile Include="Quests\DirectFinishCondition.cs" />
