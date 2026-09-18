@@ -37,6 +37,7 @@ foreach($token in @(
   'ClientPatchJavaExe',
   'ClientPatchFfdecJar',
   '$clientInputSha',
+  '$clientPatchedSha',
   '$clientGenerationRoot',
   'client-overlays\v30\',
   'client-sources\v30\',
