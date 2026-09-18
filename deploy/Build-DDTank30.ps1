@@ -125,7 +125,7 @@ foreach ($file in $scripts) {
     New-Item -ItemType Directory -Force -Path (Split-Path $dest -Parent) | Out-Null
     Copy-Item -LiteralPath $file.FullName -Destination $dest -Force
 }
-if ($scripts.Count -ne 154) { throw "Expected 154 GameServerScript source files, found $($scripts.Count)." }
+if ($scripts.Count -ne 158) { throw "Expected 158 GameServerScript source files, found $($scripts.Count)." }
 
 foreach ($forbidden in @('GameServerScripts.dll','GameServerScripts.pdb')) {
     $path = Join-Path $game $forbidden
@@ -147,7 +147,7 @@ $externalHead = (git -C $external rev-parse HEAD).Trim()
     'center=fresh-source-build',
     'fighting=fresh-source-build',
     'game=fresh-source-build',
-    "game-scripts=fresh-source-tree;count=$($scripts.Count);dk-additive=46;dk-source=dk-khoado/Gunny-3.0@16e24b119f96b93b34ddb148f9a035f71a234e67;ddt34-additive=12;ddt34-source=barrydevp/ddt3.4server@73e189aef774b1f2eead70979c97b53619db07aa",
+    "game-scripts=fresh-source-tree;count=$($scripts.Count);dk-additive=46;dk-source=dk-khoado/Gunny-3.0@16e24b119f96b93b34ddb148f9a035f71a234e67;ddt34-additive=12;ddt34-source=barrydevp/ddt3.4server@73e189aef774b1f2eead70979c97b53619db07aa;gunny92-additive=4;gunny92-source=trinhtanphat/Gunny92-001-code-backup@e53c3950f40a938fb0013be33230325e99397860",
     'third-party-libraries=repo-Lib',
     "combat-assets=dk-khoado/Gunny-3.0@$externalHead",
     "combat-map-files=$mapCount",

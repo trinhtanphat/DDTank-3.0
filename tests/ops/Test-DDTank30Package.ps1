@@ -48,7 +48,7 @@ foreach ($name in @('Game.Logic.dll')) {
     }
 }
 $scriptCount = @(Get-ChildItem -LiteralPath (Join-Path $runtime 'game\scripts') -Filter *.cs -File -Recurse -ErrorAction SilentlyContinue).Count
-if ($scriptCount -ne 154) { throw "Expected 154 fresh GameServerScript sources, found $scriptCount." }
+if ($scriptCount -ne 158) { throw "Expected 158 fresh GameServerScript sources, found $scriptCount." }
 $externalMap = Join-Path $external 'Server\Fight\map'
 $externalBomb = Join-Path $external 'Server\Fight\bomb'
 $runtimeMap = Join-Path $runtime 'fighting\map'
@@ -69,7 +69,7 @@ foreach ($check in @(@($externalMap,$runtimeMap,251,'map'),@($externalBomb,$runt
 }
 $head = (git -C $external rev-parse HEAD).Trim()
 $provenance = Get-Content -LiteralPath (Join-Path $runtime 'provenance.txt') -Raw
-foreach ($need in @('center=fresh-source-build','fighting=fresh-source-build','game=fresh-source-build','game-scripts=fresh-source-tree;count=154;dk-additive=46;dk-source=dk-khoado/Gunny-3.0@16e24b119f96b93b34ddb148f9a035f71a234e67;ddt34-additive=12;ddt34-source=barrydevp/ddt3.4server@73e189aef774b1f2eead70979c97b53619db07aa',"combat-assets=dk-khoado/Gunny-3.0@$head")) {
+foreach ($need in @('center=fresh-source-build','fighting=fresh-source-build','game=fresh-source-build','game-scripts=fresh-source-tree;count=158;dk-additive=46;dk-source=dk-khoado/Gunny-3.0@16e24b119f96b93b34ddb148f9a035f71a234e67;ddt34-additive=12;ddt34-source=barrydevp/ddt3.4server@73e189aef774b1f2eead70979c97b53619db07aa;gunny92-additive=4;gunny92-source=trinhtanphat/Gunny92-001-code-backup@e53c3950f40a938fb0013be33230325e99397860',"combat-assets=dk-khoado/Gunny-3.0@$head")) {
     if ($provenance -notmatch [regex]::Escape($need)) { throw "Missing provenance: $need" }
 }
 if ($provenance -match 'game=(prebuilt|server1)') { throw 'Prebuilt game core provenance is forbidden.' }
