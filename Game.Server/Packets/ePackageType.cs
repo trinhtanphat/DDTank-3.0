@@ -401,6 +401,12 @@
         /// </summary>
         INSUFFICIENT_MONEY = 0x58,
 
+        /// <summary>
+        /// VIP activation / renewal.
+        /// Kept at packet 92 (0x5c) for compatibility with the Gunny 3.0 Flash client.
+        /// </summary>
+        VIP_RENEWAL = 0x5c,
+
         GAME_VISITOR_DATA = 0x5d,
 
         /// <summary>
