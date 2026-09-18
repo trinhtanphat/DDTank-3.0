@@ -135,6 +135,7 @@
     <Compile Include="Data\StrengthenGoodsInfo.cs" />
     <Compile Include="Data\StrengthenInfo.cs" />
     <Compile Include="Data\UserInfo.cs" />
+    <Compile Include="Data\UserFieldInfo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SqlHelper.cs" />
   </ItemGroup>
