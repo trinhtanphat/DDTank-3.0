@@ -4,7 +4,9 @@ param(
   [int]$HttpPort=0,
   [int]$GamePort=0,
   [string]$ExternalRoot='',
-  [string]$VSToolsPath=''
+  [string]$VSToolsPath='',
+  [string]$ClientPatchJavaExe='',
+  [string]$ClientPatchFfdecJar=''
 )
 $ErrorActionPreference='Stop'
 . (Join-Path $PSScriptRoot 'Get-DDTank30Instance.ps1')
@@ -15,6 +17,8 @@ if($GamePort-le0){$GamePort=$instance.RoadPort}
 $stackRoot=$instance.Root
 if([string]::IsNullOrWhiteSpace($ExternalRoot)){$ExternalRoot=Join-Path $stackRoot 'external-sources\dk-khoado-Gunny-3.0'}
 if([string]::IsNullOrWhiteSpace($VSToolsPath)){$VSToolsPath=Join-Path $stackRoot 'build-prereqs\webtargets-14.0.0.3\pkg\tools\VSToolsPath'}
+if([string]::IsNullOrWhiteSpace($ClientPatchJavaExe)){$ClientPatchJavaExe=Join-Path $stackRoot '_tools\jdk21\bin\java.exe'}
+if([string]::IsNullOrWhiteSpace($ClientPatchFfdecJar)){$ClientPatchFfdecJar=Join-Path $stackRoot '_tools\ffdec-26.3.0\ffdec.jar'}
 $repo=Join-Path $stackRoot 'repo';$webRoot=Join-Path $stackRoot 'webroot';$requestRoot=Join-Path $stackRoot 'webapps\Request'
 $externalWeb=Join-Path $ExternalRoot 'inetpub\wwwroot';$msbuild='C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe'
 $coreRel='gunny\ui\vietnam\swf\core.swf';$coreExpectedSha='BEE0D9DB5FD6CFC827E65CFCCA01C229E3666E3B334D91F83543068DA9C65B43';$coreSource=Join-Path $externalWeb $coreRel
@@ -34,6 +38,33 @@ if(Test-Path $runtimeWeb){
   & robocopy $runtimeWeb $webRoot /E /R:2 /W:1 /NFL /NDL /NJH /NJS /NP | Out-Null
   if($LASTEXITCODE-gt7){throw "Runtime web asset overlay failed: $LASTEXITCODE"}
 }
+
+$clientRel='gunny\2.png'
+$clientInput=Join-Path $externalWeb $clientRel
+$clientTarget=Join-Path $webRoot $clientRel
+$clientOverlay=Join-Path $stackRoot 'client-overlays\v30\gunny\2.png'
+$clientPatcher=Join-Path $PSScriptRoot 'Patch-DDTank30ClientWindAim.ps1'
+$clientInputExpectedSha='7BDBF776A53913214A56D8A4A1F06B46588A36EA069E4F5B57D106549D7E2BB5'
+$clientOutputExpectedSha='CFC5902ECD585669084C47D2D89ED6C56433C3458B30828A1661E6B7DCCC3F73'
+foreach($p in @($clientInput,$clientPatcher)){if(-not(Test-Path -LiteralPath $p -PathType Leaf)){throw "Missing client wind/aim patch prerequisite: $p"}}
+$clientInputSha=(Get-FileHash -LiteralPath $clientInput -Algorithm SHA256).Hash.ToUpperInvariant()
+if($clientInputSha-ne$clientInputExpectedSha){throw "Authoritative client input hash mismatch: $clientInputSha"}
+
+$clientOverlayValid=$false
+if(Test-Path -LiteralPath $clientOverlay -PathType Leaf){
+  $clientOverlaySha=(Get-FileHash -LiteralPath $clientOverlay -Algorithm SHA256).Hash.ToUpperInvariant()
+  $clientOverlayValid=($clientOverlaySha-eq$clientOutputExpectedSha)
+}
+if(-not$clientOverlayValid){
+  foreach($p in @($ClientPatchJavaExe,$ClientPatchFfdecJar)){if(-not(Test-Path -LiteralPath $p -PathType Leaf)){throw "Missing client wind/aim patch tool: $p"}}
+  New-Item -ItemType Directory -Force -Path (Split-Path $clientOverlay -Parent)|Out-Null
+  $clientPatchWork=Join-Path $stackRoot '_artifacts\client-wind-aim-installer'
+  & $clientPatcher -InputEncodedClient $clientInput -OutputEncodedClient $clientOverlay -JavaExe $ClientPatchJavaExe -FfdecJar $ClientPatchFfdecJar -WorkRoot $clientPatchWork -ExpectedInputSha256 $clientInputExpectedSha -ExpectedOutputSha256 $clientOutputExpectedSha
+  if($LASTEXITCODE-ne0){throw "Client wind/aim patcher failed: $LASTEXITCODE"}
+}
+Copy-Item -LiteralPath $clientOverlay -Destination $clientTarget -Force
+$clientTargetHash=(Get-FileHash -LiteralPath $clientTarget -Algorithm SHA256).Hash.ToUpperInvariant()
+if($clientTargetHash-ne$clientOutputExpectedSha){throw "Client wind/aim overlay hash mismatch after webroot copy: $clientTargetHash"}
 $adminVipDeploy=Join-Path $PSScriptRoot 'Deploy-DDTank30AdminVip.ps1'
 if(-not(Test-Path -LiteralPath $adminVipDeploy -PathType Leaf)){throw "Missing AdminGunny VIP20 deploy script: $adminVipDeploy"}
 & $adminVipDeploy -RepoRoot $repo -WebRoot $webRoot -VSToolsPath $VSToolsPath

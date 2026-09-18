@@ -40,6 +40,7 @@ jobs:
             'Test-DDTank30PveLoadingGpPenalty.ps1',
             'Test-DDTank30PveScriptCoverage.ps1',
             'Test-DDTank30PvpReadyStart.ps1',
+            'Test-DDTank30ClientWindAimPatcher.ps1',
             'Test-DDTank30Barry34BrainHookCompat.ps1',
             'Test-DDTank30Barry34BrainHookBackport.ps1',
             'Test-DDTank30Gunny92CompatBackport.ps1',
