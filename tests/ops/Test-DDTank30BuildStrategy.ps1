@@ -7,6 +7,8 @@ if($raw -match '/t:Rebuild'){throw 'Build script must not use aggregate /t:Rebui
 if($raw -notmatch '/t:Clean'){throw 'Build script must have an explicit clean phase.'}
 if($raw -notmatch '/t:Build'){throw 'Build script must have a separate build phase.'}
 if($raw -notmatch '\[string\]\$RuntimeRoot'){throw 'Build script must allow an isolated RuntimeRoot for non-disruptive packaging.'}
+if($raw -notmatch '\[switch\]\$AllowLiveRuntime'){throw 'Build script must require explicit opt-in before targeting the live runtime.'}
+if($raw -notmatch 'Refusing to build directly into the live DDTank30 runtime'){throw 'Build script must refuse implicit live-runtime packaging.'}
 if($raw -match '(?m)^\$runtimeRoot\s*=\s*''C:\\Gunny-DDTank30\\runtime'''){throw 'Build script must not overwrite the RuntimeRoot parameter with a hardcoded live path.'}
 if($raw -notmatch 'Clear-DDTank30StaleBuildOutputs'){throw 'Build script must purge stale tracked build outputs before MSBuild.'}
 if($raw -notmatch 'obj\\Release'){throw 'Build script must purge stale obj/Release intermediates.'}
