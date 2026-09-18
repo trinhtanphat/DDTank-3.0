@@ -191,9 +191,10 @@ namespace Game.Server.Packets.Client
                 if (item.CUnit == 365 && item.CValue1 > 0) oneYear = item.CValue1;
             }
 
-            if (renewalDays == 31) return oneMonth;
-            if (renewalDays == 93) return threeMonths;
-            if (renewalDays == 186) return oneMonth * 6;
+            // Accept both legacy Flash durations (30/90/180) and newer 31-day bundles.
+            if (renewalDays == 30 || renewalDays == 31) return oneMonth;
+            if (renewalDays == 90 || renewalDays == 93) return threeMonths;
+            if (renewalDays == 180 || renewalDays == 186) return oneMonth * 6;
             if (renewalDays == 365) return oneYear;
 
             if (renewalDays > 0 && renewalDays % 31 == 0)
