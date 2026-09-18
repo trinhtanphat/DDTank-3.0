@@ -50,11 +50,14 @@
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
     <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="FightServer.cs" />
     <Compile Include="FightServerConfig.cs" />
+    <Compile Include="GameObjects\BotAimTrajectory.cs" />
+    <Compile Include="GameObjects\BotProxyPlayer.cs" />
     <Compile Include="GameObjects\ProxyPlayer.cs" />
     <Compile Include="Games\BattleGame.cs" />
     <Compile Include="Games\GameMgr.cs" />
