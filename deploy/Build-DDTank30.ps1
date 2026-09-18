@@ -1,8 +1,14 @@
 param(
-    [string]$RuntimeRoot = 'C:\Gunny-DDTank30\runtime'
+    [string]$RuntimeRoot = 'C:\Gunny-DDTank30\runtime',
+    [switch]$AllowLiveRuntime
 )
 
 $ErrorActionPreference = 'Stop'
+$liveRuntimeRoot = [IO.Path]::GetFullPath('C:\Gunny-DDTank30\runtime').TrimEnd('\')
+$requestedRuntimeRoot = [IO.Path]::GetFullPath($RuntimeRoot).TrimEnd('\')
+if ($requestedRuntimeRoot -ieq $liveRuntimeRoot -and -not $AllowLiveRuntime) {
+    throw 'Refusing to build directly into the live DDTank30 runtime. Use an isolated -RuntimeRoot or explicitly pass -AllowLiveRuntime.'
+}
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $external = 'C:\Gunny-DDTank30\external-sources\dk-khoado-Gunny-3.0'
 $msbuild = 'C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe'
