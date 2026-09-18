@@ -118,23 +118,27 @@ $verifyRoot = Join-Path $WorkRoot 'verify'
 
 Decode-DDTank30AlmClient $InputEncodedClient $decodedSwf
 
-$selectedClasses = 'game.objects.GameLocalPlayer,game.view.VaneView,ddt.manager.PathManager'
+$selectedClasses = 'game.objects.GameLocalPlayer,game.view.VaneView,ddt.manager.PathManager,game.view.Bomb'
 Invoke-Java @('-jar', $FfdecJar, '-onerror', 'abort', '-selectclass', $selectedClasses, '-export', 'script', $exportRoot, $decodedSwf)
 
 $gameLocalSource = Join-Path $exportRoot 'scripts\game\objects\GameLocalPlayer.as'
 $vaneSource = Join-Path $exportRoot 'scripts\game\view\VaneView.as'
 $pathManagerSource = Join-Path $exportRoot 'scripts\ddt\manager\PathManager.as'
+$bombSource = Join-Path $exportRoot 'scripts\game\view\Bomb.as'
 Require (Test-Path -LiteralPath $gameLocalSource) 'FFDec did not export GameLocalPlayer.as.'
 Require (Test-Path -LiteralPath $vaneSource) 'FFDec did not export VaneView.as.'
 Require (Test-Path -LiteralPath $pathManagerSource) 'FFDec did not export PathManager.as.'
+Require (Test-Path -LiteralPath $bombSource) 'FFDec did not export Bomb.as.'
 
 New-Item -ItemType Directory -Force -Path (Join-Path $patchRoot 'game\objects'), (Join-Path $patchRoot 'game\view'), (Join-Path $patchRoot 'ddt\manager') | Out-Null
 $gameLocalPatched = Join-Path $patchRoot 'game\objects\GameLocalPlayer.as'
 $vanePatched = Join-Path $patchRoot 'game\view\VaneView.as'
 $pathManagerPatched = Join-Path $patchRoot 'ddt\manager\PathManager.as'
+$bombPatched = Join-Path $patchRoot 'game\view\Bomb.as'
 Copy-Item -LiteralPath $gameLocalSource -Destination $gameLocalPatched -Force
 Copy-Item -LiteralPath $vaneSource -Destination $vanePatched -Force
 Copy-Item -LiteralPath $pathManagerSource -Destination $pathManagerPatched -Force
+Copy-Item -LiteralPath $bombSource -Destination $bombPatched -Force
 
 $gameLocal = [IO.File]::ReadAllText($gameLocalPatched, [Text.Encoding]::UTF8)
 $gameLocal = $gameLocal.Replace('_map', 'map')
@@ -258,6 +262,21 @@ $vane = [Regex]::Replace($vane, $zeroPattern, $zeroReplacement, 1)
 Require ($vane -ne $zeroBefore) 'Could not patch VaneView numeric fallback.'
 [IO.File]::WriteAllText($vanePatched, $vane, (New-Object Text.UTF8Encoding($false)))
 
+# Ruffle compatibility: EventDispatcher initialization writes the "target" property.
+# Bomb exposes a computed getter named target without a setter in the legacy client,
+# which Ruffle rejects with Error #1074 before any projectile can be rendered.
+# Keep the computed getter semantics and accept the constructor-time write as a no-op.
+$bomb = [IO.File]::ReadAllText($bombPatched, [Text.Encoding]::UTF8)
+Require ($bomb -match 'public function get target\(\) : Point') 'Bomb target getter was not found.'
+if ($bomb -notmatch 'public function set target\(param1:Point\) : void') {
+    $bombSetterMarker = '      public function get isCritical() : Boolean'
+    Require ($bomb.Contains($bombSetterMarker)) 'Could not locate Bomb target setter insertion point.'
+    $nl = [Environment]::NewLine
+    $bombSetter = '      public function set target(param1:Point) : void' + $nl + '      {' + $nl + '      }' + $nl + '      ' + $nl
+    $bomb = $bomb.Replace($bombSetterMarker, $bombSetter + $bombSetterMarker)
+}
+[IO.File]::WriteAllText($bombPatched, $bomb, (New-Object Text.UTF8Encoding($false)))
+
 if ($resourceBase) {
     $pathManager = [IO.File]::ReadAllText($pathManagerPatched, [Text.Encoding]::UTF8)
     $setupPattern = 'info\s*=\s*param1;\s*SITE_MAIN\s*=\s*info\.SITE;'
@@ -276,7 +295,10 @@ Invoke-Java @('-jar', $FfdecJar, '-onerror', 'abort', '-selectclass', $selectedC
 $verifiedGameLocal = [IO.File]::ReadAllText((Join-Path $verifyRoot 'scripts\game\objects\GameLocalPlayer.as'), [Text.Encoding]::UTF8)
 $verifiedVane = [IO.File]::ReadAllText((Join-Path $verifyRoot 'scripts\game\view\VaneView.as'), [Text.Encoding]::UTF8)
 $verifiedPathManager = [IO.File]::ReadAllText((Join-Path $verifyRoot 'scripts\ddt\manager\PathManager.as'), [Text.Encoding]::UTF8)
+$verifiedBomb = [IO.File]::ReadAllText((Join-Path $verifyRoot 'scripts\game\view\Bomb.as'), [Text.Encoding]::UTF8)
 
+Require ($verifiedBomb -match 'public function get target\(\) : Point') 'Patched SWF lost the Bomb target getter.'
+Require ($verifiedBomb -match 'public function set target\(param1:Point\) : void') 'Patched SWF is missing the Ruffle-safe Bomb target setter.'
 Require ($verifiedGameLocal -match 'if\(this\._isShooting\)[\s\S]*this\._shootCount < this\.localPlayer\.shootCount[\s\S]*sendGameCMDDirection') 'Patched SWF is missing mid-volley left/right direction logic.'
 Require ($verifiedGameLocal -match '\+\+this\._shootCount;[\s\S]{0,300}if\(this\._shootCount >= this\.localPlayer\.shootCount\)[\s\S]{0,300}this\._shootTimer\.stop\(\)') 'Patched SWF is missing final-shot cleanup.'
 Require ($verifiedGameLocal -match '_loc2_ = shootPoint\(\);[\s\S]{0,250}sendGameCMDShoot') 'Patched SWF does not recompute the muzzle point for each projectile.'
