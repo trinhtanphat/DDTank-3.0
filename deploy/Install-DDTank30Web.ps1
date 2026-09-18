@@ -141,6 +141,11 @@ try {
 } catch {
   throw "Instance config apply failed: $($_.Exception.Message)"
 }
+$ballListBuilder=Join-Path $PSScriptRoot 'Build-DDTank30BallListCache.ps1'
+if(-not(Test-Path -LiteralPath $ballListBuilder -PathType Leaf)){throw "Missing BallList cache builder: $ballListBuilder"}
+& $ballListBuilder -RequestRoot $requestRoot -ExpectedDatabase 'Db_Tank_V30' -ExpectedMinimumCount 300
+$ballListPath=Join-Path $requestRoot 'BallList.xml'
+if(-not(Test-Path -LiteralPath $ballListPath -PathType Leaf)){throw "BallList cache missing after rebuild: $ballListPath"}
 $legacyBootstrapAliases=@(
   @{Source=(Join-Path $webRoot 'gunny\Loading.swf');Target=(Join-Path $webRoot 'Loading.swf')},
   @{Source=(Join-Path $webRoot 'gunny\config.xml');Target=(Join-Path $webRoot 'config.xml')}
