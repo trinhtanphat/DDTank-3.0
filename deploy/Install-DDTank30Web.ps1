@@ -42,26 +42,74 @@ if(Test-Path $runtimeWeb){
 $clientRel='gunny\2.png'
 $clientInput=Join-Path $externalWeb $clientRel
 $clientTarget=Join-Path $webRoot $clientRel
-$clientOverlay=Join-Path $stackRoot 'client-overlays\v30\gunny\2.png'
 $clientPatcher=Join-Path $PSScriptRoot 'Patch-DDTank30ClientWindAim.ps1'
-$clientInputExpectedSha='7BDBF776A53913214A56D8A4A1F06B46588A36EA069E4F5B57D106549D7E2BB5'
-$clientOutputExpectedSha='CFC5902ECD585669084C47D2D89ED6C56433C3458B30828A1661E6B7DCCC3F73'
 foreach($p in @($clientInput,$clientPatcher)){if(-not(Test-Path -LiteralPath $p -PathType Leaf)){throw "Missing client wind/aim patch prerequisite: $p"}}
+
 $clientInputSha=(Get-FileHash -LiteralPath $clientInput -Algorithm SHA256).Hash.ToUpperInvariant()
-if($clientInputSha-ne$clientInputExpectedSha){throw "Authoritative client input hash mismatch: $clientInputSha"}
+$clientGenerationRoot=Join-Path $stackRoot ('client-overlays\v30\'+$clientInputSha)
+$clientOverlay=Join-Path $clientGenerationRoot 'gunny\2.png'
+$clientManifest=Join-Path $clientGenerationRoot 'manifest.json'
+$clientSourceStore=Join-Path $stackRoot ('client-sources\v30\'+$clientInputSha+'\gunny\2.png')
+
+New-Item -ItemType Directory -Force -Path (Split-Path $clientSourceStore -Parent)|Out-Null
+if(-not(Test-Path -LiteralPath $clientSourceStore -PathType Leaf)){
+  Copy-Item -LiteralPath $clientInput -Destination $clientSourceStore -Force
+}
+$clientSourceStoreSha=(Get-FileHash -LiteralPath $clientSourceStore -Algorithm SHA256).Hash.ToUpperInvariant()
+if($clientSourceStoreSha-ne$clientInputSha){throw "Stored client source hash mismatch: $clientSourceStoreSha"}
 
 $clientOverlayValid=$false
-if(Test-Path -LiteralPath $clientOverlay -PathType Leaf){
-  $clientOverlaySha=(Get-FileHash -LiteralPath $clientOverlay -Algorithm SHA256).Hash.ToUpperInvariant()
-  $clientOverlayValid=($clientOverlaySha-eq$clientOutputExpectedSha)
+$clientOutputExpectedSha=''
+if((Test-Path -LiteralPath $clientOverlay -PathType Leaf) -and (Test-Path -LiteralPath $clientManifest -PathType Leaf)){
+  try{
+    $clientMeta=Get-Content -LiteralPath $clientManifest -Raw | ConvertFrom-Json
+    $manifestInputSha=([string]$clientMeta.input_sha256).ToUpperInvariant()
+    $manifestOutputSha=([string]$clientMeta.output_sha256).ToUpperInvariant()
+    if($manifestInputSha-eq$clientInputSha -and $manifestOutputSha){
+      $clientOverlaySha=(Get-FileHash -LiteralPath $clientOverlay -Algorithm SHA256).Hash.ToUpperInvariant()
+      if($clientOverlaySha-eq$manifestOutputSha){
+        $clientOutputExpectedSha=$manifestOutputSha
+        $clientOverlayValid=$true
+      }
+    }
+  }catch{
+    $clientOverlayValid=$false
+  }
 }
+
 if(-not$clientOverlayValid){
   foreach($p in @($ClientPatchJavaExe,$ClientPatchFfdecJar)){if(-not(Test-Path -LiteralPath $p -PathType Leaf)){throw "Missing client wind/aim patch tool: $p"}}
   New-Item -ItemType Directory -Force -Path (Split-Path $clientOverlay -Parent)|Out-Null
-  $clientPatchWork=Join-Path $stackRoot '_artifacts\client-wind-aim-installer'
-  & $clientPatcher -InputEncodedClient $clientInput -OutputEncodedClient $clientOverlay -JavaExe $ClientPatchJavaExe -FfdecJar $ClientPatchFfdecJar -WorkRoot $clientPatchWork -ExpectedInputSha256 $clientInputExpectedSha -ExpectedOutputSha256 $clientOutputExpectedSha
-  if($LASTEXITCODE-ne0){throw "Client wind/aim patcher failed: $LASTEXITCODE"}
+
+  $clientPatchId=[Guid]::NewGuid().ToString('N')
+  $clientPatchWork=Join-Path $stackRoot ('_artifacts\client-wind-aim-installer\'+$clientInputSha+'-'+$clientPatchId)
+  $clientOverlayTemp=Join-Path $clientGenerationRoot ('2.'+$clientPatchId+'.tmp.png')
+  try{
+    & $clientPatcher -InputEncodedClient $clientInput -OutputEncodedClient $clientOverlayTemp -JavaExe $ClientPatchJavaExe -FfdecJar $ClientPatchFfdecJar -WorkRoot $clientPatchWork -ExpectedInputSha256 $clientInputSha
+    if($LASTEXITCODE-ne0){throw "Client wind/aim patcher failed: $LASTEXITCODE"}
+
+    $clientOutputExpectedSha=(Get-FileHash -LiteralPath $clientOverlayTemp -Algorithm SHA256).Hash.ToUpperInvariant()
+    if(-not$clientOutputExpectedSha -or $clientOutputExpectedSha-eq$clientInputSha){throw "Client wind/aim patcher produced an invalid output hash: $clientOutputExpectedSha"}
+
+    Move-Item -LiteralPath $clientOverlayTemp -Destination $clientOverlay -Force
+    $clientOverlaySha=(Get-FileHash -LiteralPath $clientOverlay -Algorithm SHA256).Hash.ToUpperInvariant()
+    if($clientOverlaySha-ne$clientOutputExpectedSha){throw "Client generation overlay hash mismatch: $clientOverlaySha"}
+
+    $clientMeta=[ordered]@{
+      input_sha256=$clientInputSha
+      output_sha256=$clientOutputExpectedSha
+      generated_at=(Get-Date).ToString('o')
+      patcher='Patch-DDTank30ClientWindAim.ps1'
+    }
+    $clientManifestTemp=$clientManifest+'.tmp'
+    $clientMeta | ConvertTo-Json | Set-Content -LiteralPath $clientManifestTemp -Encoding UTF8
+    Move-Item -LiteralPath $clientManifestTemp -Destination $clientManifest -Force
+  }finally{
+    if(Test-Path -LiteralPath $clientOverlayTemp){Remove-Item -LiteralPath $clientOverlayTemp -Force -ErrorAction SilentlyContinue}
+    if(Test-Path -LiteralPath $clientPatchWork){Remove-Item -LiteralPath $clientPatchWork -Recurse -Force -ErrorAction SilentlyContinue}
+  }
 }
+
 Copy-Item -LiteralPath $clientOverlay -Destination $clientTarget -Force
 $clientTargetHash=(Get-FileHash -LiteralPath $clientTarget -Algorithm SHA256).Hash.ToUpperInvariant()
 if($clientTargetHash-ne$clientOutputExpectedSha){throw "Client wind/aim overlay hash mismatch after webroot copy: $clientTargetHash"}
