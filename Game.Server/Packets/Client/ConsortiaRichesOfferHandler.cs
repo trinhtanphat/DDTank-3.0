@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -15,6 +15,9 @@ namespace Game.Server.Packets.Client
     {
         public int HandlePacket(GameClient client, GSPacketIn packet)
         {
+            if (FarmTreasureCompat.TryHandleTreasure(client, packet))
+                return 0;
+
             if (client.Player.PlayerCharacter.ConsortiaID == 0)
                 return 0;
 

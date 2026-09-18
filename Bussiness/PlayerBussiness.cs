@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -3302,5 +3302,392 @@ namespace Bussiness
             }
             return user;
         }
+
+        #region FarmTreasureCompat
+		public UserFieldInfo[] GetSingleFields(int ID)
+		{
+			List<UserFieldInfo> infos = new List<UserFieldInfo>();
+			SqlDataReader reader = null;
+			try
+			{
+				SqlParameter[] para = new SqlParameter[1];
+				para[0] = new SqlParameter("@ID", SqlDbType.Int, 4);
+				para[0].Value = ID;
+				db.GetReader(ref reader, "SP_Get_SingleFields", para);
+				while (reader.Read())
+				{
+					UserFieldInfo info = new UserFieldInfo();
+					info.ID = (int)reader["ID"];
+					info.FarmID = (int)reader["FarmID"];
+					info.FieldID = (int)reader["FieldID"];
+					info.SeedID = (int)reader["SeedID"];
+					info.PlantTime = (DateTime)reader["PlantTime"];
+					info.AccelerateTime = (int)reader["AccelerateTime"];
+					info.FieldValidDate = (int)reader["FieldValidDate"];
+					info.PayTime = (DateTime)reader["PayTime"];
+					info.GainCount = (int)reader["GainCount"];
+					info.AutoSeedID = (int)reader["AutoSeedID"];
+					info.AutoFertilizerID = (int)reader["AutoFertilizerID"];
+					info.AutoSeedIDCount = (int)reader["AutoSeedIDCount"];
+					info.AutoFertilizerCount = (int)reader["AutoFertilizerCount"];
+					info.isAutomatic = (bool)reader["isAutomatic"];
+					info.AutomaticTime = (DateTime)reader["AutomaticTime"];
+					info.IsExit = (bool)reader["IsExit"];
+					info.payFieldTime = (int)reader["payFieldTime"];
+					infos.Add(info);
+				}
+			}
+			catch (Exception e)
+			{
+				if (log.IsErrorEnabled)
+					log.Error("SP_GetSingleFields", e);
+			}
+			finally
+			{
+				if (reader != null && !reader.IsClosed)
+					reader.Close();
+			}
+
+			return infos.ToArray();
+		}
+
+		public bool AddFields(UserFieldInfo item)
+		{
+			bool result = false;
+			try
+			{
+				SqlParameter[] para = new SqlParameter[17];
+				para[0] = new SqlParameter("@FarmID", item.FarmID);
+				para[1] = new SqlParameter("@FieldID", item.FieldID);
+				para[2] = new SqlParameter("@SeedID", item.SeedID);
+				para[3] = new SqlParameter("@PlantTime", item.PlantTime.ToString());
+				para[4] = new SqlParameter("@AccelerateTime", item.AccelerateTime);
+				para[5] = new SqlParameter("@FieldValidDate", item.FieldValidDate);
+				para[6] = new SqlParameter("@PayTime", item.PayTime.ToString());
+				para[7] = new SqlParameter("@GainCount", item.GainCount);
+				para[8] = new SqlParameter("@AutoSeedID", item.AutoSeedID);
+				para[9] = new SqlParameter("@AutoFertilizerID", item.AutoFertilizerID);
+				para[10] = new SqlParameter("@AutoSeedIDCount", item.AutoSeedIDCount);
+				para[11] = new SqlParameter("@AutoFertilizerCount", item.AutoFertilizerCount);
+				para[12] = new SqlParameter("@isAutomatic", item.isAutomatic);
+				para[13] = new SqlParameter("@AutomaticTime", item.AutomaticTime.ToString());
+				para[14] = new SqlParameter("@IsExit", item.IsExit);
+				para[15] = new SqlParameter("@payFieldTime", item.payFieldTime);
+				para[16] = new SqlParameter("@ID", item.ID);
+				para[16].Direction = ParameterDirection.Output;
+				result = db.RunProcedure("SP_Users_Fields_Add", para);
+				item.ID = (int)para[16].Value;
+				item.IsDirty = false;
+			}
+			catch (Exception e)
+			{
+				if (log.IsErrorEnabled)
+					log.Error("Init", e);
+			}
+			finally
+			{
+			}
+
+			return result;
+		}
+
+		public bool UpdateFields(UserFieldInfo info)
+		{
+			bool result = false;
+			try
+			{
+				SqlParameter[] para = new SqlParameter[17];
+				para[0] = new SqlParameter("@ID", info.ID);
+				para[1] = new SqlParameter("@FarmID", info.FarmID);
+				para[2] = new SqlParameter("@FieldID", info.FieldID);
+				para[3] = new SqlParameter("@SeedID", info.SeedID);
+				para[4] = new SqlParameter("@PlantTime", info.PlantTime.ToString());
+				para[5] = new SqlParameter("@AccelerateTime", info.AccelerateTime);
+				para[6] = new SqlParameter("@FieldValidDate", info.FieldValidDate);
+				para[7] = new SqlParameter("@PayTime", info.PayTime.ToString());
+				para[8] = new SqlParameter("@GainCount", info.GainCount);
+				para[9] = new SqlParameter("@AutoSeedID", info.AutoSeedID);
+				para[10] = new SqlParameter("@AutoFertilizerID", info.AutoFertilizerID);
+				para[11] = new SqlParameter("@AutoSeedIDCount", info.AutoSeedIDCount);
+				para[12] = new SqlParameter("@AutoFertilizerCount", info.AutoFertilizerCount);
+				para[13] = new SqlParameter("@isAutomatic", info.isAutomatic);
+				para[14] = new SqlParameter("@AutomaticTime", info.AutomaticTime.ToString());
+				para[15] = new SqlParameter("@IsExit", info.IsExit);
+				para[16] = new SqlParameter("@payFieldTime", info.payFieldTime);
+				result = db.RunProcedure("SP_Users_Fields_Update", para);
+			}
+			catch (Exception e)
+			{
+				if (log.IsErrorEnabled)
+					log.Error("Init", e);
+			}
+
+			return result;
+		}
+
+
+        public TreasureAwardInfo[] GetAllTreasureAward()
+        {
+            List<TreasureAwardInfo> list = new List<TreasureAwardInfo>();
+            SqlDataReader reader = null;
+            try
+            {
+                db.GetReader(ref reader, "SP_Treasure_All");
+                while (reader.Read())
+                {
+                    list.Add(new TreasureAwardInfo
+                    {
+                        ID = Convert.ToInt32(reader["ID"]),
+                        TemplateID = Convert.ToInt32(reader["TemplateID"]),
+                        Name = Convert.ToString(reader["Name"]),
+                        Count = Convert.ToInt32(reader["Count"]),
+                        Validate = Convert.ToInt32(reader["Validate"]),
+                        Random = Convert.ToInt32(reader["Random"])
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                if (BaseBussiness.log.IsErrorEnabled)
+                {
+                    BaseBussiness.log.Error("SP_Treasure_All", ex);
+                }
+            }
+            finally
+            {
+                if (reader != null && !reader.IsClosed)
+                {
+                    reader.Close();
+                }
+            }
+            return list.ToArray();
+        }
+
+        public UserTreasureInfo GetSingleTreasure(int UserID)
+        {
+            SqlDataReader reader = null;
+            try
+            {
+                SqlParameter[] parameters =
+                {
+                    new SqlParameter("@UserID", SqlDbType.Int, 4) { Value = UserID }
+                };
+                db.GetReader(ref reader, "SP_GetSingleTreasure", parameters);
+                if (reader.Read())
+                {
+                    return new UserTreasureInfo
+                    {
+                        ID = Convert.ToInt32(reader["ID"]),
+                        UserID = Convert.ToInt32(reader["UserID"]),
+                        NickName = Convert.ToString(reader["NickName"]),
+                        logoinDays = Convert.ToInt32(reader["logoinDays"]),
+                        treasure = Convert.ToInt32(reader["treasure"]),
+                        treasureAdd = Convert.ToInt32(reader["treasureAdd"]),
+                        friendHelpTimes = Convert.ToInt32(reader["friendHelpTimes"]),
+                        isEndTreasure = Convert.ToBoolean(reader["isEndTreasure"]),
+                        isBeginTreasure = Convert.ToBoolean(reader["isBeginTreasure"]),
+                        LastLoginDay = Convert.ToDateTime(reader["LastLoginDay"])
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                if (BaseBussiness.log.IsErrorEnabled)
+                {
+                    BaseBussiness.log.Error("SP_GetSingleTreasure", ex);
+                }
+            }
+            finally
+            {
+                if (reader != null && !reader.IsClosed)
+                {
+                    reader.Close();
+                }
+            }
+            return null;
+        }
+
+        public List<TreasureDataInfo> GetSingleTreasureData(int UserID)
+        {
+            List<TreasureDataInfo> list = new List<TreasureDataInfo>();
+            SqlDataReader reader = null;
+            try
+            {
+                SqlParameter[] parameters =
+                {
+                    new SqlParameter("@UserID", SqlDbType.Int, 4) { Value = UserID }
+                };
+                db.GetReader(ref reader, "SP_GetSingleTreasureData", parameters);
+                while (reader.Read())
+                {
+                    list.Add(new TreasureDataInfo
+                    {
+                        ID = Convert.ToInt32(reader["ID"]),
+                        UserID = Convert.ToInt32(reader["UserID"]),
+                        TemplateID = Convert.ToInt32(reader["TemplateID"]),
+                        Count = Convert.ToInt32(reader["Count"]),
+                        ValidDate = Convert.ToInt32(reader["Validate"]),
+                        pos = Convert.ToInt32(reader["pos"]),
+                        BeginDate = Convert.ToDateTime(reader["BeginDate"]),
+                        IsExit = Convert.ToBoolean(reader["IsExit"])
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                if (BaseBussiness.log.IsErrorEnabled)
+                {
+                    BaseBussiness.log.Error("SP_GetSingleTreasureData", ex);
+                }
+            }
+            finally
+            {
+                if (reader != null && !reader.IsClosed)
+                {
+                    reader.Close();
+                }
+            }
+            return list;
+        }
+
+        public bool AddUserTreasureInfo(UserTreasureInfo item)
+        {
+            try
+            {
+                SqlParameter[] parameters = new SqlParameter[11];
+                parameters[0] = new SqlParameter("@ID", item.ID) { Direction = ParameterDirection.Output };
+                parameters[1] = new SqlParameter("@UserID", item.UserID);
+                parameters[2] = new SqlParameter("@NickName", item.NickName ?? string.Empty);
+                parameters[3] = new SqlParameter("@logoinDays", item.logoinDays);
+                parameters[4] = new SqlParameter("@treasure", item.treasure);
+                parameters[5] = new SqlParameter("@treasureAdd", item.treasureAdd);
+                parameters[6] = new SqlParameter("@friendHelpTimes", item.friendHelpTimes);
+                parameters[7] = new SqlParameter("@isEndTreasure", item.isEndTreasure ? 1 : 0);
+                parameters[8] = new SqlParameter("@isBeginTreasure", item.isBeginTreasure ? 1 : 0);
+                parameters[9] = new SqlParameter("@LastLoginDay", item.LastLoginDay);
+                parameters[10] = new SqlParameter("@Result", SqlDbType.Int) { Direction = ParameterDirection.ReturnValue };
+                db.RunProcedure("SP_Users_Treasure_Add", parameters);
+                bool ok = Convert.ToInt32(parameters[10].Value) == 0;
+                if (ok)
+                {
+                    item.ID = Convert.ToInt32(parameters[0].Value);
+                    item.IsDirty = false;
+                }
+                return ok;
+            }
+            catch (Exception ex)
+            {
+                if (BaseBussiness.log.IsErrorEnabled)
+                {
+                    BaseBussiness.log.Error("SP_Users_Treasure_Add", ex);
+                }
+                return false;
+            }
+        }
+
+        public bool UpdateUserTreasureInfo(UserTreasureInfo item)
+        {
+            try
+            {
+                SqlParameter[] parameters =
+                {
+                    new SqlParameter("@UserID", item.UserID),
+                    new SqlParameter("@NickName", item.NickName ?? string.Empty),
+                    new SqlParameter("@logoinDays", item.logoinDays),
+                    new SqlParameter("@treasure", item.treasure),
+                    new SqlParameter("@treasureAdd", item.treasureAdd),
+                    new SqlParameter("@friendHelpTimes", item.friendHelpTimes),
+                    new SqlParameter("@isEndTreasure", item.isEndTreasure ? 1 : 0),
+                    new SqlParameter("@isBeginTreasure", item.isBeginTreasure ? 1 : 0),
+                    new SqlParameter("@LastLoginDay", item.LastLoginDay),
+                    new SqlParameter("@Result", SqlDbType.Int) { Direction = ParameterDirection.ReturnValue }
+                };
+                db.RunProcedure("SP_UpdateUserTreasure", parameters);
+                bool ok = Convert.ToInt32(parameters[9].Value) == 0;
+                if (ok)
+                {
+                    item.IsDirty = false;
+                }
+                return ok;
+            }
+            catch (Exception ex)
+            {
+                if (BaseBussiness.log.IsErrorEnabled)
+                {
+                    BaseBussiness.log.Error("SP_UpdateUserTreasure", ex);
+                }
+                return false;
+            }
+        }
+
+        public bool AddTreasureData(TreasureDataInfo item)
+        {
+            try
+            {
+                SqlParameter[] parameters = new SqlParameter[9];
+                parameters[0] = new SqlParameter("@ID", item.ID) { Direction = ParameterDirection.Output };
+                parameters[1] = new SqlParameter("@UserID", item.UserID);
+                parameters[2] = new SqlParameter("@TemplateID", item.TemplateID);
+                parameters[3] = new SqlParameter("@Count", item.Count);
+                parameters[4] = new SqlParameter("@Validate", item.ValidDate);
+                parameters[5] = new SqlParameter("@Pos", item.pos);
+                parameters[6] = new SqlParameter("@BeginDate", item.BeginDate);
+                parameters[7] = new SqlParameter("@IsExit", item.IsExit ? 1 : 0);
+                parameters[8] = new SqlParameter("@Result", SqlDbType.Int) { Direction = ParameterDirection.ReturnValue };
+                db.RunProcedure("SP_TreasureData_Add", parameters);
+                bool ok = Convert.ToInt32(parameters[8].Value) == 0;
+                if (ok)
+                {
+                    item.ID = Convert.ToInt32(parameters[0].Value);
+                    item.IsDirty = false;
+                }
+                return ok;
+            }
+            catch (Exception ex)
+            {
+                if (BaseBussiness.log.IsErrorEnabled)
+                {
+                    BaseBussiness.log.Error("SP_TreasureData_Add", ex);
+                }
+                return false;
+            }
+        }
+
+        public bool UpdateTreasureData(TreasureDataInfo item)
+        {
+            try
+            {
+                SqlParameter[] parameters =
+                {
+                    new SqlParameter("@ID", item.ID),
+                    new SqlParameter("@UserID", item.UserID),
+                    new SqlParameter("@TemplateID", item.TemplateID),
+                    new SqlParameter("@Count", item.Count),
+                    new SqlParameter("@Validate", item.ValidDate),
+                    new SqlParameter("@Pos", item.pos),
+                    new SqlParameter("@BeginDate", item.BeginDate),
+                    new SqlParameter("@IsExit", item.IsExit ? 1 : 0),
+                    new SqlParameter("@Result", SqlDbType.Int) { Direction = ParameterDirection.ReturnValue }
+                };
+                db.RunProcedure("SP_UpdateTreasureData", parameters);
+                bool ok = Convert.ToInt32(parameters[8].Value) == 0;
+                if (ok)
+                {
+                    item.IsDirty = false;
+                }
+                return ok;
+            }
+            catch (Exception ex)
+            {
+                if (BaseBussiness.log.IsErrorEnabled)
+                {
+                    BaseBussiness.log.Error("SP_UpdateTreasureData", ex);
+                }
+                return false;
+            }
+        }
+
+        #endregion
+
     }
 }

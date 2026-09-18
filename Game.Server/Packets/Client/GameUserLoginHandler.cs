@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -17,6 +17,9 @@ namespace Game.Server.Packets.Client
 
         public int HandlePacket(GameClient client, GSPacketIn packet)
         {
+            if (FarmTreasureCompat.TryHandleFarm(client, packet))
+                return 0;
+
             //type可能的值为 -2, -1, 1, 3, 4
             //当type = 1, 3, 4时,分别指快速加入组队战,Boss战,夺宝战
             //当type = -1时,房间ID为所点的房间ID，无密码时也传空字符串
