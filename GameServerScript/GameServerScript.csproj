@@ -202,6 +202,17 @@
     <Compile Include="AI\NPC\ThirdNormalBloomNpcS.cs" />
     <Compile Include="AI\NPC\ThirdSimpleKingFirst.cs" />
     <Compile Include="AI\NPC\ThirdTerrorBloomNpcS.cs" />
+    <Compile Include="AI\NPC\FiveHardFirstNpc.cs" />
+    <Compile Include="AI\NPC\FiveTerrorFirstNpc.cs" />
+    <Compile Include="AI\NPC\SeizeNpcAi.cs" />
+    <Compile Include="AI\NPC\SeventhNormalCageNpc.cs" />
+    <Compile Include="AI\NPC\SeventhSimpleCageNpc.cs" />
+    <Compile Include="AI\NPC\ThirdHardBloodNpc.cs" />
+    <Compile Include="AI\NPC\ThirdNormalBloodNpc.cs" />
+    <Compile Include="AI\NPC\ThirdSimpleBloodNpc.cs" />
+    <Compile Include="AI\NPC\ThirdSimpleBlowNpc.cs" />
+    <Compile Include="AI\NPC\ThirdSimpleFixureLongNpc.cs" />
+    <Compile Include="AI\NPC\ThirdTerrorBloodNpc.cs" />
     <Compile Include="Commands\TestCommands.cs" />
     <Compile Include="Commands\TestTaskCommand.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
