@@ -25,6 +25,7 @@ jobs:
           $ErrorActionPreference = 'Stop'
           $tests = @(
             'Test-DDTank30BuildStrategy.ps1',
+            'Test-DDTank30Clr2RuntimeGuard.ps1',
             'Test-DDTank30DatabaseSource.ps1',
             'Test-DDTank30DbAuth.ps1',
             'Test-DDTank30GameServerProject.ps1',
@@ -83,6 +84,17 @@ jobs:
           msbuild ./Game.Logic/Game.Logic.csproj /t:Build /p:Configuration=Release /m /v:minimal
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           msbuild ./Fighting.Server/Fighting.Server.csproj /t:Build /p:Configuration=Release /m /v:minimal
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Validate CLR2 runtime references
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $runtime = Join-Path $env:RUNNER_TEMP 'ddtank30-clr2'
+          New-Item -ItemType Directory -Force -Path (Join-Path $runtime 'game'), (Join-Path $runtime 'fighting') | Out-Null
+          Copy-Item 'Game.Logic/bin/Release/Game.Logic.dll' (Join-Path $runtime 'game/Game.Logic.dll')
+          Copy-Item 'Game.Logic/bin/Release/Game.Logic.dll' (Join-Path $runtime 'fighting/Game.Logic.dll')
+          & powershell.exe -NoProfile -ExecutionPolicy Bypass -File 'deploy/Test-DDTank30Clr2Runtime.ps1' -RuntimeRoot $runtime
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Upload smart bot Fight artifacts

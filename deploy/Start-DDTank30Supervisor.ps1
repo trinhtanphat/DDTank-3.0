@@ -7,6 +7,11 @@ $stateRoot='C:\Gunny-DDTank30\state'
 New-Item -ItemType Directory -Force -Path $stateRoot | Out-Null
 $logPath=Join-Path $stateRoot 'supervisor.log'
 function Log([string]$m){Add-Content -LiteralPath $logPath -Value ((Get-Date -Format o)+' '+$m) -Encoding UTF8}
+$runtimeGuard=Join-Path $PSScriptRoot 'Test-DDTank30Clr2Runtime.ps1'
+if(-not(Test-Path -LiteralPath $runtimeGuard)){throw "missing runtime guard: $runtimeGuard"}
+& powershell.exe -NoProfile -ExecutionPolicy Bypass -File $runtimeGuard -RuntimeRoot $RuntimeRoot
+if($LASTEXITCODE-ne0){throw "DDTank30 CLR2 runtime guard failed with exit $LASTEXITCODE"}
+Log 'CLR2 runtime guard passed'
 function Listener([int]$port){@(Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue | Where-Object {$_.LocalPort -eq $port})}
 function Wait-OwnedPort([int]$port,[int]$processId,[int]$timeoutSec){
     $end=(Get-Date).AddSeconds($timeoutSec)
