@@ -37,6 +37,12 @@ foreach($token in @(
   'ClientPatchJavaExe',
   'ClientPatchFfdecJar',
   '$clientInput=$clientTarget',
+  '$clientResourceBaseUrl',
+  '$clientPatchContract',
+  'wind-aim-resource-host-v3',
+  'patch_contract',
+  'resource_base_url',
+  '-ResourceBaseUrl $clientResourceBaseUrl',
   '$clientInputSha',
   '$clientPatchedSha',
   '$clientGenerationRoot',
@@ -51,10 +57,20 @@ foreach($token in @(
   '$clientOverlayTemp',
   '[Guid]::NewGuid()',
   'Client generation overlay hash mismatch',
-  'Client wind/aim overlay hash mismatch after webroot copy'
+  'Client wind/aim overlay hash mismatch after webroot copy',
+  'Build-DDTank30BallListCache.ps1',
+  "-ExpectedDatabase 'Db_Tank_V30'",
+  '-ExpectedMinimumCount 300',
+  'BallList cache missing after rebuild'
 )){
   if($raw -notmatch [regex]::Escape($token)){throw "Web installer missing token: $token"}
 }
+
+$applyInstanceIndex=$raw.IndexOf('& (Join-Path $PSScriptRoot ''Apply-DDTank30Instance.ps1'')')
+$ballListBuilderIndex=$raw.IndexOf('$ballListBuilder=Join-Path $PSScriptRoot ''Build-DDTank30BallListCache.ps1''')
+$iisImportIndex=$raw.IndexOf('Import-Module WebAdministration')
+if($applyInstanceIndex-lt0 -or $ballListBuilderIndex-lt0 -or $iisImportIndex-lt0){throw 'BallList cache rebuild ordering anchors are missing'}
+if(-not($applyInstanceIndex-lt$ballListBuilderIndex -and $ballListBuilderIndex-lt$iisImportIndex)){throw 'BallList cache must rebuild after instance config apply and before IIS provisioning'}
 
 $mirrorIndex=$raw.IndexOf('& robocopy $externalWeb $webRoot /MIR')
 $runtimeOverlayIndex=$raw.IndexOf('$runtimeWeb=Join-Path $repo ''runtime-assets\v30''')
