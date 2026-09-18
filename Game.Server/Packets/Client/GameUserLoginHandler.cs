@@ -7,6 +7,9 @@ using Game.Server.GameObjects;
 using Game.Server.Managers;
 using Bussiness;
 using Game.Server.Rooms;
+using Game.Server.GameUtils;
+using Bussiness.Managers;
+using SqlDataProvider.Data;
 
 namespace Game.Server.Packets.Client
 {
@@ -21,7 +24,13 @@ namespace Game.Server.Packets.Client
             //当type = 1, 3, 4时,分别指快速加入组队战,Boss战,夺宝战
             //当type = -1时,房间ID为所点的房间ID，无密码时也传空字符串
             //当type = -2时,表示PVE游戏中的邀请
-            bool isInvite=packet.ReadBoolean();
+            byte firstByte = packet.ReadByte();
+            if (firstByte == 2)
+            {
+                return HandleFarmGrow(client, packet);
+            }
+
+            bool isInvite = firstByte != 0;
             int type = packet.ReadInt();
             int isRoundID = packet.ReadInt();
             int roomId = -1;
@@ -54,5 +63,82 @@ namespace Game.Server.Packets.Client
 
             return 0;
         }
+        private int HandleFarmGrow(GameClient client, GSPacketIn packet)
+        {
+            packet.ReadByte(); // legacy farm bag type (13)
+            int templateID = packet.ReadInt();
+            int fieldID = packet.ReadInt();
+
+            ItemTemplateInfo seedTemplate = ItemMgr.FindItemTemplate(templateID);
+            if (seedTemplate == null || fieldID < 0)
+                return 0;
+
+            UserFieldInfo field = null;
+            using (PlayerBussiness db = new PlayerBussiness())
+            {
+                UserFieldInfo[] fields = db.GetSingleFields(client.Player.PlayerCharacter.ID);
+                for (int i = 0; i < fields.Length; i++)
+                {
+                    if (fields[i] != null && fields[i].FieldID == fieldID)
+                    {
+                        field = fields[i];
+                        break;
+                    }
+                }
+            }
+
+            if (field == null || field.SeedID != 0 || !field.IsValidField())
+                return 0;
+
+            PlayerInventory farmBag = new PlayerInventory(client.Player, true, 30, 13, 0, true);
+            farmBag.LoadFromDatabase();
+            if (farmBag.GetItemCount(templateID) <= 0)
+                return 0;
+
+            int oldSeedID = field.SeedID;
+            DateTime oldPlantTime = field.PlantTime;
+            int oldGainCount = field.GainCount;
+            int oldValidDate = field.FieldValidDate;
+            int oldAccelerate = field.AccelerateTime;
+
+            field.SeedID = seedTemplate.TemplateID;
+            field.PlantTime = DateTime.Now;
+            field.GainCount = seedTemplate.Property2;
+            field.FieldValidDate = seedTemplate.Property3;
+            field.AccelerateTime = 0;
+
+            bool saved;
+            using (PlayerBussiness db = new PlayerBussiness())
+            {
+                saved = db.UpdateFields(field);
+            }
+            if (!saved)
+                return 0;
+
+            if (!farmBag.RemoveTemplate(templateID, 1))
+            {
+                field.SeedID = oldSeedID;
+                field.PlantTime = oldPlantTime;
+                field.GainCount = oldGainCount;
+                field.FieldValidDate = oldValidDate;
+                field.AccelerateTime = oldAccelerate;
+                using (PlayerBussiness db = new PlayerBussiness())
+                    db.UpdateFields(field);
+                return 0;
+            }
+            farmBag.SaveToDatabase();
+
+            GSPacketIn response = new GSPacketIn((byte)ePackageType.GAME_ROOM_LOGIN, client.Player.PlayerCharacter.ID);
+            response.WriteByte(2);
+            response.WriteInt(field.FieldID);
+            response.WriteInt(field.SeedID);
+            response.WriteDateTime(field.PlantTime);
+            response.WriteDateTime(field.PayTime);
+            response.WriteInt(field.GainCount);
+            response.WriteInt(field.FieldValidDate);
+            client.Out.SendTCP(response);
+            return 0;
+        }
+
     }
 }
