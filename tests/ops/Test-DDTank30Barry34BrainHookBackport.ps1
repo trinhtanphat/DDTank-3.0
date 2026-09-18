@@ -31,6 +31,8 @@ try {
         }
         $text = [Text.Encoding]::UTF8.GetString($bytes)
         if ($text.Contains("`r")) { throw "CRLF/CR not allowed in canonical Git blob: $rel" }
+        if ([regex]::IsMatch($text, '[,(]\s*[A-Za-z_][A-Za-z0-9_]*\s*:')) { throw "C# 4 named arguments are not supported by the DDTank30 runtime script compiler: $rel" }
+        if ($text -match '\\$"' -or $text -match '\\?\\.') { throw "Modern C# syntax is not supported by the DDTank30 runtime script compiler: $rel" }
     }
 }
 finally {
