@@ -2,10 +2,10 @@ $ErrorActionPreference = 'Stop'
 $repo = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $root = Join-Path $repo 'GameServerScript'
 $files = @(Get-ChildItem $root -Filter *.cs -File -Recurse | Where-Object { $_.FullName -notmatch '\\(bin|obj)\\' })
-if ($files.Count -ne 185) { throw "Expected 185 canonical GameServerScript source files, found $($files.Count)." }
+if ($files.Count -ne 188) { throw "Expected 188 canonical GameServerScript source files, found $($files.Count)." }
 $projectRaw = Get-Content (Join-Path $root 'GameServerScript.csproj') -Raw
 $compilePaths = @([regex]::Matches($projectRaw,'<Compile Include="([^"]+\.cs)"') | ForEach-Object { $_.Groups[1].Value })
-if ($compilePaths.Count -ne 185) { throw "GameServerScript.csproj compile count mismatch: $($compilePaths.Count)." }
+if ($compilePaths.Count -ne 188) { throw "GameServerScript.csproj compile count mismatch: $($compilePaths.Count)." }
 $compileSet = @{}; $compilePaths | ForEach-Object { $compileSet[$_.ToLowerInvariant()] = $true }
 $relativeFiles = @($files | ForEach-Object { $_.FullName.Substring($root.Length + 1) })
 foreach ($rel in $relativeFiles) { if (-not $compileSet.ContainsKey($rel.ToLowerInvariant())) { throw "Source missing from csproj: $rel" } }
@@ -59,11 +59,14 @@ $critical = @(
     'AI\NPC\DarkCastle\FourNormalCycLoneNpc.cs',
     'AI\NPC\DarkCastle\FourNormalFireNpc.cs',
     'AI\NPC\DarkCastle\FourTerrorCycLoneNpc.cs',
-    'AI\NPC\DarkCastle\FourTerrorFireNpc.cs'
+    'AI\NPC\DarkCastle\FourTerrorFireNpc.cs',
+    'AI\NPC\DragonWar\FiveHardSecondNpc.cs',
+    'AI\NPC\DragonWar\FiveNormalSecondNpc.cs',
+    'AI\NPC\DragonWar\FiveTerrorSecondNpc.cs'
 )
 foreach ($rel in $critical) { if (-not (Test-Path -LiteralPath (Join-Path $root $rel))) { throw "Missing DB-critical PvE script: $rel" } }
 $buildRaw = Get-Content (Join-Path $repo 'deploy\Build-DDTank30.ps1') -Raw
-if ($buildRaw -notmatch '\$scripts\.Count -ne 185') { throw 'Build script must enforce the 185-script canonical count.' }
+if ($buildRaw -notmatch '\$scripts\.Count -ne 188') { throw 'Build script must enforce the 188-script canonical count.' }
 $sourceCommit = '16e24b119f96b93b34ddb148f9a035f71a234e67'
 $prov = Get-Content (Join-Path $root 'DK-KHOADO-BACKPORT.md') -Raw
 if ($prov -notmatch [regex]::Escape($sourceCommit)) { throw 'DK backport provenance commit is missing.' }
@@ -86,4 +89,8 @@ $barry34BrainHookProv = Get-Content (Join-Path $root 'BARRY34-BRAINHOOK-BACKPORT
 if ($barry34BrainHookProv -notmatch [regex]::Escape($ddt34Commit)) { throw 'Barry34 brain-hook backport provenance commit is missing.' }
 $barry34Properties1Prov = Get-Content (Join-Path $root 'BARRY34-DARKCASTLE-PROPERTIES1-BACKPORT.md') -Raw
 if ($barry34Properties1Prov -notmatch [regex]::Escape($ddt34Commit)) { throw 'Barry34 Properties1 backport provenance commit is missing.' }
-Write-Host 'DDTANK30_PVE_SCRIPT_COVERAGE=PASS total=185 critical=66 dk=46 ddt34=12 barry34-brainhook=5 barry34-properties1=6 gunny92=4 yuti=11 skelletonx=4 basegunny=1'
+$barry34DirectDamageProv = Get-Content (Join-Path $root 'BARRY34-DIRECTDAMAGE-BACKPORT.md') -Raw
+if ($barry34DirectDamageProv -notmatch [regex]::Escape($ddt34Commit)) { throw 'Barry34 direct-damage source provenance commit is missing.' }
+$barry34DirectDamageSemantics = '3f5b4866572823dee7bd01c86c5488948ebd7b82'
+if ($barry34DirectDamageProv -notmatch [regex]::Escape($barry34DirectDamageSemantics)) { throw 'Barry34 direct-damage semantics provenance commit is missing.' }
+Write-Host 'DDTANK30_PVE_SCRIPT_COVERAGE=PASS total=188 critical=69 dk=46 ddt34=12 barry34-brainhook=5 barry34-properties1=6 barry34-directdamage=3 gunny92=4 yuti=11 skelletonx=4 basegunny=1'

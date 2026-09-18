@@ -229,6 +229,9 @@
     <Compile Include="AI\NPC\DarkCastle\FourNormalFireNpc.cs" />
     <Compile Include="AI\NPC\DarkCastle\FourTerrorCycLoneNpc.cs" />
     <Compile Include="AI\NPC\DarkCastle\FourTerrorFireNpc.cs" />
+    <Compile Include="AI\NPC\DragonWar\FiveHardSecondNpc.cs" />
+    <Compile Include="AI\NPC\DragonWar\FiveNormalSecondNpc.cs" />
+    <Compile Include="AI\NPC\DragonWar\FiveTerrorSecondNpc.cs" />
     <Compile Include="Commands\TestCommands.cs" />
     <Compile Include="Commands\TestTaskCommand.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
