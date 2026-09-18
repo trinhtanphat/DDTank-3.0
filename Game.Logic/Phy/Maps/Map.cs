@@ -101,7 +101,7 @@ namespace Game.Logic.Phy.Maps
 
             bool left = x > 0 && !IsEmpty(x - 1, y);
             bool right = x + 1 < _bound.Width && !IsEmpty(x + 1, y);
-            return left && right;
+            return left || right;
         }
 
         public Point FindYLineNotEmptyPoint(int x, int y, int h)

@@ -395,7 +395,7 @@ namespace Game.Logic
                         //RoomType=eRoomType.
                         IBotGamePlayer runtimeBot = p.PlayerDetail as IBotGamePlayer;
                         bool isBot = runtimeBot != null && runtimeBot.IsBot;
-                        if (!hasBot && !isBot)
+                        if (!isBot)
                         {
                             if (RoomType != eRoomType.Freedom)
                             {

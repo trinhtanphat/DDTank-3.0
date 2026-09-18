@@ -5,7 +5,7 @@ $player = Get-Content (Join-Path $root 'Game.Logic\Phy\Object\Player.cs') -Raw
 $fall = Get-Content (Join-Path $root 'Game.Logic\Actions\LivingFallingAction.cs') -Raw
 
 if ($map -notmatch 'HasCharacterSupport') { throw 'Missing deterministic terrain support helper.' }
-if ($map -notmatch 'return left && right;') { throw 'One-sided edge support must not keep a character floating.' }
+if (-not $map.Contains('return left || right;')) { throw 'One-sided terrain support must stop the character before it sinks into the map.' }
 if ($map -match 'tx > _bound\.Width') { throw 'Walk bound check still accepts x == width.' }
 
 $start = [regex]::Match($player, '(?s)public override void StartMoving\(int delay, int speed\).*?\n\s*}')
