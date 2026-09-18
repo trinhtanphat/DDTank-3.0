@@ -34,6 +34,10 @@ if(Test-Path $runtimeWeb){
   & robocopy $runtimeWeb $webRoot /E /R:2 /W:1 /NFL /NDL /NJH /NJS /NP | Out-Null
   if($LASTEXITCODE-gt7){throw "Runtime web asset overlay failed: $LASTEXITCODE"}
 }
+$adminVipDeploy=Join-Path $PSScriptRoot 'Deploy-DDTank30AdminVip.ps1'
+if(-not(Test-Path -LiteralPath $adminVipDeploy -PathType Leaf)){throw "Missing AdminGunny VIP20 deploy script: $adminVipDeploy"}
+& $adminVipDeploy -RepoRoot $repo -WebRoot $webRoot -VSToolsPath $VSToolsPath
+
 $legacyLoopCss=@(
   (Join-Path $webRoot 'gunny\scripts\style.css'),
   (Join-Path $webRoot 'gunny\scripts\index_data\style.css')
