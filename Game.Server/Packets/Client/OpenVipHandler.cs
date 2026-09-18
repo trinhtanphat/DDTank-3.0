@@ -201,6 +201,7 @@ namespace Game.Server.Packets.Client
             if (renewalDays == 90 || renewalDays == 93) return threeMonths;
             if (renewalDays == 180 || renewalDays == 186) return oneMonth * 6;
             if (renewalDays == 365) return oneYear;
+            if (renewalDays == 730) return checked(oneYear * 2);
 
             if (renewalDays > 0 && renewalDays % 31 == 0)
             {
