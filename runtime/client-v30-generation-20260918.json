@@ -1,0 +1,11 @@
+{
+    "date":  "2026-09-18",
+    "role":  "canonical DDTank30 post-mirror client generation before wind/multishot patch",
+    "runtime_asset":  "runtime-assets/v30/gunny/2.png",
+    "input_sha256":  "A6FB0B6FD33D752E211B7F0B92ADB5B1153B15C2D7E9743E8643DE714E0D82F6",
+    "input_length":  1842968,
+    "patched_output_sha256":  "DC34CA8636142675E2C6182C8DD622932E3330761C50C97835A8B24575FF4BCE",
+    "patched_swf_sha256":  "A0ACA67DB07F990235475D1E473EA4388B2C64EC99B44A81ED91EFFC4B6F5C7A",
+    "patcher":  "deploy/Patch-DDTank30ClientWindAim.ps1",
+    "source_note":  "This generation was the newer live client generation discovered after the original 7BDB external source. It preserves newer client changes; installer overlays this canonical generation first, then applies the semantic wind/multishot patch through the generation-aware cache."
+}
