@@ -59,7 +59,7 @@ $clientSourceStoreSha=(Get-FileHash -LiteralPath $clientSourceStore -Algorithm S
 if($clientSourceStoreSha-ne$clientInputSha){throw "Stored client source hash mismatch: $clientSourceStoreSha"}
 
 $clientOverlayValid=$false
-$clientOutputExpectedSha=''
+$clientPatchedSha=''
 if((Test-Path -LiteralPath $clientOverlay -PathType Leaf) -and (Test-Path -LiteralPath $clientManifest -PathType Leaf)){
   try{
     $clientMeta=Get-Content -LiteralPath $clientManifest -Raw | ConvertFrom-Json
@@ -68,7 +68,7 @@ if((Test-Path -LiteralPath $clientOverlay -PathType Leaf) -and (Test-Path -Liter
     if($manifestInputSha-eq$clientInputSha -and $manifestOutputSha){
       $clientOverlaySha=(Get-FileHash -LiteralPath $clientOverlay -Algorithm SHA256).Hash.ToUpperInvariant()
       if($clientOverlaySha-eq$manifestOutputSha){
-        $clientOutputExpectedSha=$manifestOutputSha
+        $clientPatchedSha=$manifestOutputSha
         $clientOverlayValid=$true
       }
     }
@@ -88,16 +88,16 @@ if(-not$clientOverlayValid){
     & $clientPatcher -InputEncodedClient $clientInput -OutputEncodedClient $clientOverlayTemp -JavaExe $ClientPatchJavaExe -FfdecJar $ClientPatchFfdecJar -WorkRoot $clientPatchWork -ExpectedInputSha256 $clientInputSha
     if($LASTEXITCODE-ne0){throw "Client wind/aim patcher failed: $LASTEXITCODE"}
 
-    $clientOutputExpectedSha=(Get-FileHash -LiteralPath $clientOverlayTemp -Algorithm SHA256).Hash.ToUpperInvariant()
-    if(-not$clientOutputExpectedSha -or $clientOutputExpectedSha-eq$clientInputSha){throw "Client wind/aim patcher produced an invalid output hash: $clientOutputExpectedSha"}
+    $clientPatchedSha=(Get-FileHash -LiteralPath $clientOverlayTemp -Algorithm SHA256).Hash.ToUpperInvariant()
+    if(-not$clientPatchedSha -or $clientPatchedSha-eq$clientInputSha){throw "Client wind/aim patcher produced an invalid output hash: $clientPatchedSha"}
 
     Move-Item -LiteralPath $clientOverlayTemp -Destination $clientOverlay -Force
     $clientOverlaySha=(Get-FileHash -LiteralPath $clientOverlay -Algorithm SHA256).Hash.ToUpperInvariant()
-    if($clientOverlaySha-ne$clientOutputExpectedSha){throw "Client generation overlay hash mismatch: $clientOverlaySha"}
+    if($clientOverlaySha-ne$clientPatchedSha){throw "Client generation overlay hash mismatch: $clientOverlaySha"}
 
     $clientMeta=[ordered]@{
       input_sha256=$clientInputSha
-      output_sha256=$clientOutputExpectedSha
+      output_sha256=$clientPatchedSha
       generated_at=(Get-Date).ToString('o')
       patcher='Patch-DDTank30ClientWindAim.ps1'
     }
@@ -112,7 +112,7 @@ if(-not$clientOverlayValid){
 
 Copy-Item -LiteralPath $clientOverlay -Destination $clientTarget -Force
 $clientTargetHash=(Get-FileHash -LiteralPath $clientTarget -Algorithm SHA256).Hash.ToUpperInvariant()
-if($clientTargetHash-ne$clientOutputExpectedSha){throw "Client wind/aim overlay hash mismatch after webroot copy: $clientTargetHash"}
+if($clientTargetHash-ne$clientPatchedSha){throw "Client wind/aim overlay hash mismatch after webroot copy: $clientTargetHash"}
 $adminVipDeploy=Join-Path $PSScriptRoot 'Deploy-DDTank30AdminVip.ps1'
 if(-not(Test-Path -LiteralPath $adminVipDeploy -PathType Leaf)){throw "Missing AdminGunny VIP20 deploy script: $adminVipDeploy"}
 & $adminVipDeploy -RepoRoot $repo -WebRoot $webRoot -VSToolsPath $VSToolsPath
