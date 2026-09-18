@@ -26,5 +26,5 @@ if (($hot.Compile -join "`n") -ne ($marry.Compile -join "`n")) { throw 'Internal
 if ($root.RootNamespace -ne 'Game.Server') { throw "RootNamespace expected Game.Server, got $($root.RootNamespace)" }
 if ($root.AssemblyName -ne 'Game.Server') { throw "AssemblyName expected Game.Server, got $($root.AssemblyName)" }
 if ($root.TargetFramework -ne 'v3.5') { throw "TargetFramework expected v3.5, got $($root.TargetFramework)" }
-if (($root.Compile -join "`n") -ne ($hot.Compile -join "`n")) { throw "Root compile graph does not match coherent 252-file internal snapshot (root=$($root.Compile.Count), canonical=$($hot.Compile.Count))." }
+if (($root.Compile -join "`n") -ne ($hot.Compile -join "`n")) { throw "Root compile graph does not match coherent internal Game.Server snapshot (root=$($root.Compile.Count), canonical=$($hot.Compile.Count))." }
 Write-Host 'PASS: Game.Server root project matches coherent internal DDTank 3.0 source snapshot.'
