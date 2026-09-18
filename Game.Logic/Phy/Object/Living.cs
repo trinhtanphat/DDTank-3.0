@@ -678,9 +678,8 @@ namespace Game.Logic.Phy.Object
                     //}
 
                     pkg.WriteInt(bomb.BallInfo.ID);
-                    //FlyingPartical
-                    //pkg.WriteString(bomb.BallInfo.FlyingPartical);
-                    pkg.WriteString("");
+                    // Projectile trail metadata: the Flash/Ruffle client only creates the flying emitter when this is non-empty.
+                    pkg.WriteString(bomb.BallInfo.FlyingPartical ?? "");
                     pkg.WriteInt(5);
                     pkg.WriteInt(5);
                     //pkg.WriteInt(0);
