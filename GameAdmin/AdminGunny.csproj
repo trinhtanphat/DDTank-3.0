@@ -62,6 +62,8 @@
     <Content Include="Admin\AddEvent.aspx" />
     <Content Include="Admin\SendMail.aspx" />
     <Content Include="Admin\SetVip.aspx" />
+    <Content Include="Admin\Dashboard.aspx" />
+    <Content Include="Admin\PlayerTools.aspx" />
     <Content Include="Admin\UserEdit.aspx" />
     <Content Include="Styles\Site.css" />
     <Content Include="Default.aspx" />
@@ -133,6 +135,20 @@
     </Compile>
     <Compile Include="Admin\SetVip.aspx.designer.cs">
       <DependentUpon>SetVip.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Admin\Dashboard.aspx.cs">
+      <DependentUpon>Dashboard.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Admin\Dashboard.aspx.designer.cs">
+      <DependentUpon>Dashboard.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Admin\PlayerTools.aspx.cs">
+      <DependentUpon>PlayerTools.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Admin\PlayerTools.aspx.designer.cs">
+      <DependentUpon>PlayerTools.aspx</DependentUpon>
     </Compile>
     <Compile Include="Admin\UserEdit.aspx.cs">
       <DependentUpon>UserEdit.aspx</DependentUpon>

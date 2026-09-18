@@ -33,6 +33,8 @@
                     EnableViewState="false" IncludeStyleBlock="false" Orientation="Horizontal" >
                     <Items>
                         <asp:MenuItem NavigateUrl="~/Default.aspx" Text="Home"/>
+                        <asp:MenuItem NavigateUrl="~/Admin/Dashboard.aspx" Text="Dashboard V30"/>
+                        <asp:MenuItem NavigateUrl="~/Admin/PlayerTools.aspx" Text="Người chơi"/>
                         <asp:MenuItem NavigateUrl="~/About.aspx" Text="About"/>
                         <asp:MenuItem NavigateUrl="~/Admin/UserEdit.aspx" Text="UserEdit"/>
                         <asp:MenuItem NavigateUrl="~/Admin/SetVip.aspx" Text="VIP 1-20"/>
