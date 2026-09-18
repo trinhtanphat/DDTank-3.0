@@ -263,6 +263,64 @@ namespace Game.Logic
             return index;
         }
 
+        private static bool HasPvpSpawnCapacity(int index, int requiredPerTeam)
+        {
+            if (index == 0 || requiredPerTeam <= 0)
+                return false;
+
+            MapPoint points;
+            if (!_maps.TryGetValue(index, out points) || points == null)
+                return false;
+
+            return points.PosX != null && points.PosX1 != null &&
+                points.PosX.Count >= requiredPerTeam &&
+                points.PosX1.Count >= requiredPerTeam;
+        }
+
+        public static int GetMapIndex(int index, byte type, int serverId, int requiredPerTeam)
+        {
+            if (requiredPerTeam <= 0)
+                return GetMapIndex(index, type, serverId);
+
+            if (index != 0 && HasPvpSpawnCapacity(index, requiredPerTeam))
+                return index;
+
+            List<int> candidates = new List<int>();
+            List<int> configured;
+            if (_serverMap.TryGetValue(serverId, out configured))
+            {
+                foreach (int id in configured)
+                {
+                    MapInfo info = FindMapInfo(id);
+                    if (info == null || (int)(type & info.Type) == 0)
+                        continue;
+                    if (HasPvpSpawnCapacity(id, requiredPerTeam))
+                        candidates.Add(id);
+                }
+            }
+
+            // Legacy Server_Map rows can mix comma/pipe groups and include one-sided
+            // PvE/event maps. Fallback only to loaded maps valid for both PvP teams.
+            if (candidates.Count == 0)
+            {
+                foreach (int id in _maps.Keys)
+                {
+                    MapInfo info = FindMapInfo(id);
+                    if (info == null || (int)(type & info.Type) == 0)
+                        continue;
+                    if (HasPvpSpawnCapacity(id, requiredPerTeam))
+                        candidates.Add(id);
+                }
+            }
+
+            if (candidates.Count == 0)
+                throw new InvalidOperationException(
+                    string.Format("No PvP map has at least {0} spawn points per team for room type {1}.",
+                        requiredPerTeam, type));
+
+            return candidates[random.Next(candidates.Count)];
+        }
+
         public static MapPoint GetMapRandomPos(int index)
         {
             MapPoint pos = new MapPoint();
