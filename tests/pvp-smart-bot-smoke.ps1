@@ -10,7 +10,7 @@ $fightProject = Get-Content (Join-Path $root 'Fighting.Server\Fighting.Server.cs
 
 function Assert-True([bool]$ok,[string]$message) { if (-not $ok) { throw $message } }
 
-Assert-True ($bot -match 'classs+BotProxyPlayers*:s*IGamePlayers*,s*IBotGamePlayer') 'bot player contract missing'
+Assert-True ($bot.Contains('public class BotProxyPlayer : IGamePlayer, IBotGamePlayer')) 'bot player contract missing'
 Assert-True ($bot.Contains('TryFindAccurateShot')) 'accurate shot planner missing'
 Assert-True ($bot.Contains('TryFindTerrainClearShot')) 'terrain clearing planner missing'
 Assert-True ($bot.Contains('TryFindFlyShot')) 'fly reposition planner missing'
@@ -23,12 +23,12 @@ Assert-True ($bot.Contains('game.GetAllFightPlayers()')) 'bot must reason server
 Assert-True ($trajectory.Contains('BotTrajectoryOutcome.Terrain')) 'terrain outcome missing'
 Assert-True ($trajectory.Contains('targetDamageDistance(px, py) < blastRadius')) 'runtime splash parity missing'
 Assert-True ($room.Contains('IsSyntheticBotRoom')) 'synthetic room guard missing'
-Assert-True ($room -match 'BotFillEligibleTicks*=.*5000L') '5 second bot eligibility missing'
-Assert-True ($mgr -match 'PICK_UP_INTERVALs*=s*1000') '1 second match poll missing'
-Assert-True ($mgr -match 'BOT_FILL_WAIT_MSs*=s*5000') 'bot fill policy constant missing'
+Assert-True ($room.Contains('BotFillEligibleTick = syntheticBotRoom ? long.MaxValue : TickHelper.GetTickCount() + 5000L;')) '5 second bot eligibility missing'
+Assert-True ($mgr.Contains('public static readonly int PICK_UP_INTERVAL = 1000;')) '1 second match poll missing'
+Assert-True ($mgr.Contains('public static readonly int BOT_FILL_WAIT_MS = 5000;')) 'bot fill policy constant missing'
 Assert-True ($mgr.Contains('Interlocked.Decrement')) 'negative runtime bot ID missing'
 Assert-True ($mgr.Contains('CreateBotRoom')) 'bot room factory missing'
-Assert-True ($pvp -match 'LoadingProcesss*=s*100') 'bot loading auto-complete missing'
+Assert-True ($pvp.Contains('p.LoadingProcess = 100;')) 'bot loading auto-complete missing'
 Assert-True ($pvp.Contains('bot.TakeTurn')) 'bot turn hook missing'
 Assert-True ($pvp.Contains('hasBot ? 0 : CalculateGuildMatchResult')) 'bot-match guild reward suppression missing'
 Assert-True ($pvp.Contains('if (!hasBot && !isBot)')) 'bot-match persisted reward suppression missing'
