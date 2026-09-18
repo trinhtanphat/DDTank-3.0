@@ -22,7 +22,7 @@ namespace GameServerScript.AI.NPC
 			m_body.CurrentShootMinus = 1f;
 			foreach (PhysicalObj item in list_0)
 			{
-				base.Game.RemovePhysicalObj(item, sendToClient: true);
+				base.Game.RemovePhysicalObj(item, true);
 			}
 			list_0 = new List<PhysicalObj>();
 		}
