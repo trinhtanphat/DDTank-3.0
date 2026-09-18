@@ -26,17 +26,45 @@ END;
 
 IF OBJECT_ID('dbo.Server_Config','U') IS NOT NULL
 BEGIN
-    MERGE dbo.Server_Config AS target
-    USING (VALUES
+    DECLARE @VipConfig TABLE
+    (
+        Name nvarchar(50) NOT NULL PRIMARY KEY,
+        Value nvarchar(2000) NOT NULL
+    );
+
+    INSERT @VipConfig(Name,Value)
+    VALUES
         ('VIPMaxLevel','20'),
         ('VIPExpForEachLv','0|200|400|800|2000|4000|8000|20000|40000|80000|200000|400000|800000|1200000|1800000|2600000|3600000|4800000|6200000|7800000'),
         ('VIPExpNeededForEachLv','0|200|400|800|2000|4000|8000|20000|40000|80000|200000|400000|800000|1200000|1800000|2600000|3600000|4800000|6200000|7800000'),
         ('VIPExpGainPerDay','10'),
-        ('VIPExpDecreasePerDay','5')
-    ) AS source(Name,Value)
-    ON target.Name=source.Name
-    WHEN MATCHED THEN UPDATE SET Value=source.Value
-    WHEN NOT MATCHED THEN INSERT(Name,Value) VALUES(source.Name,source.Value);
+        ('VIPExpDecreasePerDay','5');
+
+    UPDATE target
+    SET target.Value = source.Value
+    FROM dbo.Server_Config AS target
+    INNER JOIN @VipConfig AS source ON source.Name = target.Name;
+
+    IF COLUMNPROPERTY(OBJECT_ID('dbo.Server_Config'),'ID','IsIdentity') = 1
+    BEGIN
+        INSERT dbo.Server_Config(Name,Value)
+        SELECT source.Name,source.Value
+        FROM @VipConfig AS source
+        WHERE NOT EXISTS (SELECT 1 FROM dbo.Server_Config AS target WHERE target.Name=source.Name);
+    END
+    ELSE
+    BEGIN
+        DECLARE @MaxConfigId int;
+        SELECT @MaxConfigId=ISNULL(MAX(ID),0)
+        FROM dbo.Server_Config WITH (UPDLOCK,HOLDLOCK);
+
+        INSERT dbo.Server_Config(ID,Name,Value)
+        SELECT @MaxConfigId + ROW_NUMBER() OVER (ORDER BY source.Name),
+               source.Name,
+               source.Value
+        FROM @VipConfig AS source
+        WHERE NOT EXISTS (SELECT 1 FROM dbo.Server_Config AS target WHERE target.Name=source.Name);
+    END
 END;
 
 UPDATE dbo.Sys_VIP_Info
