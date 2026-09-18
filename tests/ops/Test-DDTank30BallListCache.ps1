@@ -7,7 +7,7 @@ $raw=Get-Content -LiteralPath $p -Raw
 
 foreach($token in @(
   '[string]$RequestRoot',
-  "[string]$ExpectedDatabase = 'Db_Tank_V30'",
+  '[string]$ExpectedDatabase = ''Db_Tank_V30''',
   '[int]$ExpectedMinimumCount = 300',
   'Web.config',
   'appSettings',
