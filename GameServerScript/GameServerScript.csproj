@@ -218,6 +218,11 @@
     <Compile Include="AI\NPC\PSMNpc5002Ai.cs" />
     <Compile Include="AI\NPC\PSMNpc5003Ai.cs" />
     <Compile Include="AI\NPC\PSMNpc5004Ai.cs" />
+    <Compile Include="AI\NPC\AcademyPVE\EighthPaoNpc.cs" />
+    <Compile Include="AI\NPC\AcademyPVE\EighthSmallBat.cs" />
+    <Compile Include="AI\NPC\GuluOlympics\SixHardThirdBadNpcAi.cs" />
+    <Compile Include="AI\NPC\GuluOlympics\SixNormalThirdBadNpcAi.cs" />
+    <Compile Include="AI\NPC\GuluOlympics\SixTerrorThirdBadNpcAi.cs" />
     <Compile Include="Commands\TestCommands.cs" />
     <Compile Include="Commands\TestTaskCommand.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

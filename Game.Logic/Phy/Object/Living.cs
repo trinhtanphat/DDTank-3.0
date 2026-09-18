@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -960,6 +960,10 @@ namespace Game.Logic.Phy.Object
             if (TakePlayerDamage != null)
                 TakePlayerDamage(this, source, ref damageAmount, ref criticalAmount);
         }
+
+        public virtual void OnAfterTakedBomb() { }
+        public virtual void OnAfterTakedFrozen() { }
+        public virtual void OnAfterTakeDamage(Living source) { }
 
         protected void OnBeginNewTurn()
         {

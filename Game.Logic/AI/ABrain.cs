@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 //using System.Linq;
 using System.Text;
@@ -26,6 +26,10 @@ namespace Game.Logic.AI
 
         public ABrain() { }
         public virtual void OnCreated() { }
+        public virtual void OnAfterTakedBomb() { }
+        public virtual void OnAfterTakedFrozen() { }
+        public virtual void OnDie() { }
+        public virtual void OnAfterTakeDamage(Living source) { }
         public virtual void OnBeginNewTurn() { }
         public virtual void OnBeginSelfTurn() { }
         public virtual void OnStartAttacking() { }
