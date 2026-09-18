@@ -129,6 +129,8 @@ namespace Game.Server.Quests
                     return new GameFightByGameCondition(quest, info, value); //23、完成战斗（无论胜败）/游戏模式/数量
                 case 24:
                     return new GameOverByGameCondition(quest, info, value);  //24、战斗胜利/游戏模式/数量
+                case 45:
+                    return new FightWithPetCondition(quest, info, value);    //45、later-client compatibility: complete battle with pet quest
                 default:
                     if (log.IsErrorEnabled)
                         log.Error(string.Format("Can't find quest condition : {0}", info.CondictionType));
