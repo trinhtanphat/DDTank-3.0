@@ -51,7 +51,7 @@ $clr2Guard = Join-Path $repo 'deploy\Test-DDTank30Clr2Runtime.ps1'
 & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $clr2Guard -RuntimeRoot $runtime
 if ($LASTEXITCODE -ne 0) { throw "CLR2 runtime guard failed with exit $LASTEXITCODE" }
 $scriptCount = @(Get-ChildItem -LiteralPath (Join-Path $runtime 'game\scripts') -Filter *.cs -File -Recurse -ErrorAction SilentlyContinue).Count
-if ($scriptCount -ne 174) { throw "Expected 174 fresh GameServerScript sources, found $scriptCount." }
+if ($scriptCount -ne 179) { throw "Expected 179 fresh GameServerScript sources, found $scriptCount." }
 $externalMap = Join-Path $external 'Server\Fight\map'
 $externalBomb = Join-Path $external 'Server\Fight\bomb'
 $runtimeMap = Join-Path $runtime 'fighting\map'
@@ -72,7 +72,7 @@ foreach ($check in @(@($externalMap,$runtimeMap,251,'map'),@($externalBomb,$runt
 }
 $head = (git -C $external rev-parse HEAD).Trim()
 $provenance = Get-Content -LiteralPath (Join-Path $runtime 'provenance.txt') -Raw
-foreach ($need in @('center=fresh-source-build','fighting=fresh-source-build','game=fresh-source-build','game-scripts=fresh-source-tree;count=174;dk-additive=46;dk-source=dk-khoado/Gunny-3.0@16e24b119f96b93b34ddb148f9a035f71a234e67;ddt34-additive=12;ddt34-source=barrydevp/ddt3.4server@73e189aef774b1f2eead70979c97b53619db07aa;gunny92-additive=4;gunny92-source=trinhtanphat/Gunny92-001-code-backup@e53c3950f40a938fb0013be33230325e99397860;yuti-additive=11;yuti-source=yutikeyux/ddt-34-csharp@b90215e199ae079c05eb290ed1cbf2a2fb4bdf5e;skelletonx-additive=4;skelletonx-source=SkelletonX/DDTank4.1@09f8cdb2891ef0b49f44c4d6f68035a728623c00;basegunny-additive=1;basegunny-source=trinhtanphat/BaseGunnyII@94df4bc8add1d605a098ae44e291015c453100fe',"combat-assets=dk-khoado/Gunny-3.0@$head")) {
+foreach ($need in @('center=fresh-source-build','fighting=fresh-source-build','game=fresh-source-build','game-scripts=fresh-source-tree;count=179;dk-additive=46;dk-source=dk-khoado/Gunny-3.0@16e24b119f96b93b34ddb148f9a035f71a234e67;ddt34-additive=12;ddt34-source=barrydevp/ddt3.4server@73e189aef774b1f2eead70979c97b53619db07aa;barry34-brainhook-additive=5;barry34-brainhook-source=barrydevp/ddt3.4server@73e189aef774b1f2eead70979c97b53619db07aa;gunny92-additive=4;gunny92-source=trinhtanphat/Gunny92-001-code-backup@e53c3950f40a938fb0013be33230325e99397860;yuti-additive=11;yuti-source=yutikeyux/ddt-34-csharp@b90215e199ae079c05eb290ed1cbf2a2fb4bdf5e;skelletonx-additive=4;skelletonx-source=SkelletonX/DDTank4.1@09f8cdb2891ef0b49f44c4d6f68035a728623c00;basegunny-additive=1;basegunny-source=trinhtanphat/BaseGunnyII@94df4bc8add1d605a098ae44e291015c453100fe',"combat-assets=dk-khoado/Gunny-3.0@$head")) {
     if ($provenance -notmatch [regex]::Escape($need)) { throw "Missing provenance: $need" }
 }
 if ($provenance -match 'game=(prebuilt|server1)') { throw 'Prebuilt game core provenance is forbidden.' }

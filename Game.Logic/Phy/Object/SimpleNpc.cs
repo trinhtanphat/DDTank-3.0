@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -107,8 +107,14 @@ namespace Game.Logic.Phy.Object
 
         public override void Die()
         {
+            bool wasLiving = IsLiving;
             GetDropItemInfo();
             base.Die();
+            if (wasLiving && !IsLiving)
+            {
+                try { m_ai.OnDie(); }
+                catch (Exception ex) { log.ErrorFormat("SimpleNpc OnDie error:{0}", ex); }
+            }
         }
 
         public override void Die(int delay)
@@ -149,6 +155,27 @@ namespace Game.Logic.Phy.Object
                 log.ErrorFormat("SimpleNpc StartAttacking error:{1}", ex);
             }
 
+        }
+
+        public override void OnAfterTakedBomb()
+        {
+            try { m_ai.OnAfterTakedBomb(); }
+            catch (Exception ex) { log.ErrorFormat("SimpleNpc OnAfterTakedBomb error:{0}", ex); }
+            base.OnAfterTakedBomb();
+        }
+
+        public override void OnAfterTakedFrozen()
+        {
+            try { m_ai.OnAfterTakedFrozen(); }
+            catch (Exception ex) { log.ErrorFormat("SimpleNpc OnAfterTakedFrozen error:{0}", ex); }
+            base.OnAfterTakedFrozen();
+        }
+
+        public override void OnAfterTakeDamage(Living source)
+        {
+            try { m_ai.OnAfterTakeDamage(source); }
+            catch (Exception ex) { log.ErrorFormat("SimpleNpc OnAfterTakeDamage error:{0}", ex); }
+            base.OnAfterTakeDamage(source);
         }
 
         public override void Dispose()

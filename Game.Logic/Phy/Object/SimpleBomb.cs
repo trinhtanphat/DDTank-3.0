@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using SqlDataProvider.Data;
@@ -6,6 +6,7 @@ using Game.Logic.Effects;
 using Game.Logic.Phy.Maps;
 using Game.Logic.Phy.Actions;
 using Game.Logic.Phy.Maths;
+using Game.Logic.Actions;
 using Bussiness;
 
 namespace Game.Logic.Phy.Object
@@ -187,14 +188,17 @@ namespace Game.Logic.Phy.Object
                     case BombType.FORZEN:
                         foreach (Living p in playersAround)
                         {
+                            bool frozenApplied = false;
                             if (m_owner is SimpleBoss && new IceFronzeEffect(100).Start(p))
                             {
+                                frozenApplied = true;
                                 m_actions.Add(new BombAction(m_lifeTime, ActionType.FORZEN, p.Id, 0, 0, 0));
                             }
                             else
                             {
                                 if (new IceFronzeEffect(2).Start(p))
                                 {
+                                    frozenApplied = true;
                                     m_actions.Add(new BombAction(m_lifeTime, ActionType.FORZEN, p.Id, 0, 0, 0));
                                 }
                                 else
@@ -202,6 +206,10 @@ namespace Game.Logic.Phy.Object
                                     m_actions.Add(new BombAction(m_lifeTime, ActionType.FORZEN, -1, 0, 0, 0));
                                     m_actions.Add(new BombAction(m_lifeTime, ActionType.UNANGLE, p.Id, 0, 0, 0));
                                 }
+                            }
+                            if (frozenApplied && (p is SimpleBoss || p is SimpleNpc))
+                            {
+                                m_game.AddAction(new LivingAfterShootedFrozen(p, (int)((m_lifeTime + 1) * 1000)));
                             }
                         }
                         break;
@@ -274,6 +282,10 @@ namespace Game.Logic.Phy.Object
                                 if (p is SimpleBoss)
                                 {
                                     ((PVEGame)m_game).OnShooted();
+                                }
+                                if (p is SimpleBoss || p is SimpleNpc)
+                                {
+                                    m_game.AddAction(new LivingAfterShootedAction(m_owner, p, (int)((m_lifeTime + 1) * 1000)));
                                 }
                             }
                             else if (p is SimpleBoss)

@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -67,6 +67,8 @@
     <Compile Include="Actions\FocusAction.cs" />
     <Compile Include="Actions\LivingCallFunctionAction.cs" />
     <Compile Include="Actions\LivingChangeDirectionAction.cs" />
+    <Compile Include="Actions\LivingAfterShootedAction.cs" />
+    <Compile Include="Actions\LivingAfterShootedFrozen.cs" />
     <Compile Include="Actions\LivingDelayEffectAction.cs" />
     <Compile Include="Actions\LivingDieAction.cs" />
     <Compile Include="Actions\LivingBeatAction.cs" />
