@@ -528,6 +528,16 @@ namespace Game.Logic.Phy.Object
             return false;
         }
 
+        public bool RangeAttacking(int fx, int tx, string action, int delay, bool directDamage)
+        {
+            if (IsLiving)
+            {
+                m_game.AddAction(new LivingRangeAttackingAction(this, fx, tx, action, delay, directDamage, null));
+                return true;
+            }
+            return false;
+        }
+
         public void GetShootForceAndAngle(ref int x, ref int y, int bombId, int minTime, int maxTime, int bombCount, float time, ref int force, ref int angle)
         {
             if (minTime >= maxTime)

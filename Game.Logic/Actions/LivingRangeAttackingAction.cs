@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -23,7 +23,14 @@ namespace Game.Logic.Actions
 
 
 
-        public LivingRangeAttackingAction(Living living, int fx, int tx, string action, int delay, List<Player>players)
+        private bool m_directDamage;
+
+        public LivingRangeAttackingAction(Living living, int fx, int tx, string action, int delay, List<Player> players)
+            : this(living, fx, tx, action, delay, false, players)
+        {
+        }
+
+        public LivingRangeAttackingAction(Living living, int fx, int tx, string action, int delay, bool directDamage, List<Player> players)
             : base(delay, 1000)
         {
             m_living = living;
@@ -31,6 +38,7 @@ namespace Game.Logic.Actions
             m_fx = fx;
             m_tx = tx;
             m_action = action;
+            m_directDamage = directDamage;
         }
 
         private int MakeDamage(Living p)
@@ -65,9 +73,12 @@ namespace Game.Logic.Actions
 
             double damage = (baseDamage * (1 + attack * 0.001) * (1 - (DR1 + DR2 - DR1 * DR2))) * damagePlus * shootMinus;
 
-            Rectangle rect = p.GetDirectDemageRect();
-            double distance = Math.Sqrt((rect.X - m_living.X) * (rect.X - m_living.X) + (rect.Y - m_living.Y) * (rect.Y - m_living.Y));
-            damage = damage * (1 - distance /Math.Abs(m_tx - m_fx) / 4);
+            if (!m_directDamage)
+            {
+                Rectangle rect = p.GetDirectDemageRect();
+                double distance = Math.Sqrt((rect.X - m_living.X) * (rect.X - m_living.X) + (rect.Y - m_living.Y) * (rect.Y - m_living.Y));
+                damage = damage * (1 - distance / Math.Abs(m_tx - m_fx) / 4);
+            }
             
             if (damage < 0)
             {
