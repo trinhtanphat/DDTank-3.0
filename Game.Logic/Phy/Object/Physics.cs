@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -24,6 +24,8 @@ namespace Game.Logic.Phy.Object
         protected bool m_isLiving;
 
         protected bool m_isMoving;
+
+        private int properties1;
 
         public Physics(int id)
         {
@@ -57,6 +59,12 @@ namespace Game.Logic.Phy.Object
             get { return m_isLiving; }
 
             set { m_isLiving = value; }
+        }
+
+        public int Properties1
+        {
+            get { return properties1; }
+            set { properties1 = value; }
         }
 
         public virtual int X

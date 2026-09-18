@@ -43,6 +43,8 @@ jobs:
             'Test-DDTank30ClientWindAimPatcher.ps1',
             'Test-DDTank30Barry34BrainHookCompat.ps1',
             'Test-DDTank30Barry34BrainHookBackport.ps1',
+            'Test-DDTank30PhysicsProperties1Compat.ps1',
+            'Test-DDTank30Barry34DarkCastleProperties1.ps1',
             'Test-DDTank30Gunny92CompatBackport.ps1',
             'Test-DDTank30YutiCompatBackport.ps1',
             'Test-DDTank30SkelletonxCompatBackport.ps1',
