@@ -32,6 +32,13 @@ foreach($token in @(
   'legacyBootstrapAliases',
   'gunny\Loading.swf',
   'gunny\config.xml',
+  '$legacyConfig',
+  'COMMUNITY_INTERFACE',
+  'COMMUNITY_FRIEND_LIST_PATH',
+  'STATISTIC',
+  'COUNT_PATH',
+  "SetAttribute('enable','false')",
+  "SetAttribute('isexist','false')",
   'Legacy bootstrap alias hash mismatch',
   'Patch-DDTank30ClientWindAim.ps1',
   'ClientPatchJavaExe',
@@ -79,10 +86,11 @@ if(-not($applyInstanceIndex-lt$ballListBuilderIndex -and $ballListBuilderIndex-l
 
 $mirrorIndex=$raw.IndexOf('& robocopy $externalWeb $webRoot /MIR')
 $runtimeOverlayIndex=$raw.IndexOf('$runtimeWeb=Join-Path $repo ''runtime-assets\v30''')
+$legacyConfigIndex=$raw.IndexOf('$legacyConfig=Join-Path $webRoot ''gunny\config.xml''')
 $clientOverlayIndex=$raw.IndexOf('$clientRel=''gunny\2.png''')
 $adminVipIndex=$raw.IndexOf('$adminVipDeploy=Join-Path $PSScriptRoot ''Deploy-DDTank30AdminVip.ps1''')
-if($mirrorIndex-lt0 -or $runtimeOverlayIndex-lt0 -or $clientOverlayIndex-lt0 -or $adminVipIndex-lt0){throw 'Web installer overlay ordering anchors are missing'}
-if(-not($mirrorIndex-lt$runtimeOverlayIndex -and $runtimeOverlayIndex-lt$clientOverlayIndex -and $clientOverlayIndex-lt$adminVipIndex)){throw 'Client wind/aim overlay must run after all static/runtime mirrors and before AdminGunny deploy'}
+if($mirrorIndex-lt0 -or $runtimeOverlayIndex-lt0 -or $legacyConfigIndex-lt0 -or $clientOverlayIndex-lt0 -or $adminVipIndex-lt0){throw 'Web installer overlay ordering anchors are missing'}
+if(-not($mirrorIndex-lt$runtimeOverlayIndex -and $runtimeOverlayIndex-lt$legacyConfigIndex -and $legacyConfigIndex-lt$clientOverlayIndex -and $clientOverlayIndex-lt$adminVipIndex)){throw 'Legacy config sanitization must run after all static/runtime mirrors and before the client overlay; AdminGunny deploy stays last'}
 
 foreach($forbidden in @(
   "[string]`$PublicIp='103.9.156.181'",
