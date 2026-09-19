@@ -1,5 +1,6 @@
 param(
     [string]$RuntimeRoot = 'C:\Gunny-DDTank30\runtime',
+    [string]$InternalHost = '127.0.0.1',
     [int]$PollSeconds = 2
 )
 $ErrorActionPreference='Stop'
@@ -12,7 +13,7 @@ if(-not(Test-Path -LiteralPath $runtimeGuard)){throw "missing runtime guard: $ru
 & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $runtimeGuard -RuntimeRoot $RuntimeRoot
 if($LASTEXITCODE-ne0){throw "DDTank30 CLR2 runtime guard failed with exit $LASTEXITCODE"}
 Log 'CLR2 runtime guard passed'
-function Listener([int]$port){@(Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue | Where-Object {$_.LocalPort -eq $port})}
+function Listener([int]$port){@(Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue | Where-Object {$_.LocalAddress -eq $InternalHost -and $_.LocalPort -eq $port})}
 function Wait-OwnedPort([int]$port,[int]$processId,[int]$timeoutSec){
     $end=(Get-Date).AddSeconds($timeoutSec)
     while((Get-Date)-lt$end){
@@ -28,7 +29,7 @@ function Start-Role([string]$name,[string]$subdir,[string]$exeName,[int]$port,[i
     $exe=Join-Path $dir $exeName
     if(-not(Test-Path -LiteralPath $exe)){throw "missing runtime executable: $exe"}
     $busy=@(Listener $port)
-    if($busy.Count -gt 0){throw "port $port already occupied before $name startup"}
+    if($busy.Count -gt 0){throw "internal port $InternalHost`:$port already occupied before $name startup"}
     $psi=New-Object System.Diagnostics.ProcessStartInfo
     $psi.FileName=$exe
     $psi.Arguments='--start'
