@@ -44,7 +44,7 @@ $clientTarget=Join-Path $webRoot $clientRel
 $clientInput=$clientTarget
 $clientPatcher=Join-Path $PSScriptRoot 'Patch-DDTank30ClientWindAim.ps1'
 $clientResourceBaseUrl=('http://'+$PublicIp+':'+$HttpPort+'/Resource/')
-$clientPatchContract='wind-aim-resource-host-v3'
+$clientPatchContract='wind-aim-resource-host-prelogin-selfid-v4'
 foreach($p in @($clientInput,$clientPatcher)){if(-not(Test-Path -LiteralPath $p -PathType Leaf)){throw "Missing client wind/aim patch prerequisite: $p"}}
 
 $clientInputSha=(Get-FileHash -LiteralPath $clientInput -Algorithm SHA256).Hash.ToUpperInvariant()

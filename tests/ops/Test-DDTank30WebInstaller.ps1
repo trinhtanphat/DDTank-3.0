@@ -39,7 +39,7 @@ foreach($token in @(
   '$clientInput=$clientTarget',
   '$clientResourceBaseUrl',
   '$clientPatchContract',
-  'wind-aim-resource-host-v3',
+  'wind-aim-resource-host-prelogin-selfid-v4',
   'patch_contract',
   'resource_base_url',
   '-ResourceBaseUrl $clientResourceBaseUrl',
