@@ -39,6 +39,46 @@ if(Test-Path $runtimeWeb){
   if($LASTEXITCODE-gt7){throw "Runtime web asset overlay failed: $LASTEXITCODE"}
 }
 
+$legacyConfig=Join-Path $webRoot 'gunny\config.xml'
+if(Test-Path -LiteralPath $legacyConfig -PathType Leaf){
+  [xml]$legacyXml=[IO.File]::ReadAllText($legacyConfig,[Text.Encoding]::UTF8)
+  $legacyNode=$legacyXml.root.config
+  if($legacyNode.STATISTIC){$legacyNode.STATISTIC.SetAttribute('value','false')}
+  if($legacyNode.COUNT_PATH){$legacyNode.COUNT_PATH.SetAttribute('value','')}
+  if($legacyNode.PHP){
+    $legacyNode.PHP.SetAttribute('isShow','false')
+    $legacyNode.PHP.SetAttribute('link','false')
+    $legacyNode.PHP.SetAttribute('site','')
+    $legacyNode.PHP.SetAttribute('infoPath','')
+  }
+  if($legacyNode.COMMUNITY_FRIEND_PATH){
+    $legacyNode.COMMUNITY_FRIEND_PATH.SetAttribute('isUser','false')
+    $legacyNode.COMMUNITY_FRIEND_PATH.SetAttribute('value','')
+  }
+  if($legacyNode.COMMUNITY_INVITE_PATH){$legacyNode.COMMUNITY_INVITE_PATH.SetAttribute('value','')}
+  if($legacyNode.COMMUNITY_FRIEND_LIST_PATH){
+    $legacyNode.COMMUNITY_FRIEND_LIST_PATH.SetAttribute('value','')
+    $legacyNode.COMMUNITY_FRIEND_LIST_PATH.SetAttribute('snsPath','')
+    $legacyNode.COMMUNITY_FRIEND_LIST_PATH.SetAttribute('isexist','false')
+    $legacyNode.COMMUNITY_FRIEND_LIST_PATH.SetAttribute('isexistBtnVisble','false')
+    $legacyNode.COMMUNITY_FRIEND_LIST_PATH.SetAttribute('cmBtnVisble','false')
+  }
+  if($legacyNode.COMMUNITY_INTERFACE){
+    $legacyNode.COMMUNITY_INTERFACE.SetAttribute('enable','false')
+    $legacyNode.COMMUNITY_INTERFACE.SetAttribute('path','')
+    $legacyNode.COMMUNITY_INTERFACE.SetAttribute('shareBtnVisble','false')
+  }
+  if($legacyNode.EXTERNAL_INTERFACE){
+    $legacyNode.EXTERNAL_INTERFACE.SetAttribute('enable','false')
+    $legacyNode.EXTERNAL_INTERFACE.SetAttribute('path','')
+  }
+  $legacyXmlSettings=New-Object Xml.XmlWriterSettings
+  $legacyXmlSettings.Encoding=New-Object Text.UTF8Encoding($false)
+  $legacyXmlSettings.Indent=$true
+  $legacyXmlWriter=[Xml.XmlWriter]::Create($legacyConfig,$legacyXmlSettings)
+  try{$legacyXml.Save($legacyXmlWriter)}finally{$legacyXmlWriter.Dispose()}
+}
+
 $clientRel='gunny\2.png'
 $clientTarget=Join-Path $webRoot $clientRel
 $clientInput=$clientTarget
