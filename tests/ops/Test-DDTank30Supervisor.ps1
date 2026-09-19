@@ -17,4 +17,7 @@ if($raw -match 'Select-Object\s+-Reverse'){throw 'Supervisor cleanup uses invali
 if($installRaw -notlike '*IS_ROLEMEMBER*'){throw 'Installer SQL role grant is not idempotent'}
 if($installRaw -notlike '*DDTank30-Stack*'){throw 'Installer task name missing'}
 if($installRaw -notlike '*Start-DDTank30Supervisor.ps1*'){throw 'Installer does not invoke supervisor'}
+if($installRaw -notlike '*-RestartCount 5*'){throw 'Supervisor recovery must use a bounded five-retry policy'}
+if($installRaw -like '*-RestartCount 99*'){throw 'Supervisor recovery still uses the old 99-retry loop'}
+if($raw -notlike '*supervisor failed:*'){throw 'Supervisor does not persist failure reason before recovery'}
 Write-Host 'PASS: DDTank30 supervisor is isolated and preserves console stdin.'
