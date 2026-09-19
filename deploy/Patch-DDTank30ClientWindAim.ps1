@@ -118,27 +118,31 @@ $verifyRoot = Join-Path $WorkRoot 'verify'
 
 Decode-DDTank30AlmClient $InputEncodedClient $decodedSwf
 
-$selectedClasses = 'game.objects.GameLocalPlayer,game.view.VaneView,ddt.manager.PathManager,game.view.Bomb'
+$selectedClasses = 'game.objects.GameLocalPlayer,game.view.VaneView,ddt.manager.PathManager,game.view.Bomb,ddt.utils.RequestVairableCreater'
 Invoke-Java @('-jar', $FfdecJar, '-onerror', 'abort', '-selectclass', $selectedClasses, '-export', 'script', $exportRoot, $decodedSwf)
 
 $gameLocalSource = Join-Path $exportRoot 'scripts\game\objects\GameLocalPlayer.as'
 $vaneSource = Join-Path $exportRoot 'scripts\game\view\VaneView.as'
 $pathManagerSource = Join-Path $exportRoot 'scripts\ddt\manager\PathManager.as'
 $bombSource = Join-Path $exportRoot 'scripts\game\view\Bomb.as'
+$requestVariableSource = Join-Path $exportRoot 'scripts\ddt\utils\RequestVairableCreater.as'
 Require (Test-Path -LiteralPath $gameLocalSource) 'FFDec did not export GameLocalPlayer.as.'
 Require (Test-Path -LiteralPath $vaneSource) 'FFDec did not export VaneView.as.'
 Require (Test-Path -LiteralPath $pathManagerSource) 'FFDec did not export PathManager.as.'
 Require (Test-Path -LiteralPath $bombSource) 'FFDec did not export Bomb.as.'
+Require (Test-Path -LiteralPath $requestVariableSource) 'FFDec did not export RequestVairableCreater.as.'
 
-New-Item -ItemType Directory -Force -Path (Join-Path $patchRoot 'game\objects'), (Join-Path $patchRoot 'game\view'), (Join-Path $patchRoot 'ddt\manager') | Out-Null
+New-Item -ItemType Directory -Force -Path (Join-Path $patchRoot 'game\objects'), (Join-Path $patchRoot 'game\view'), (Join-Path $patchRoot 'ddt\manager'), (Join-Path $patchRoot 'ddt\utils') | Out-Null
 $gameLocalPatched = Join-Path $patchRoot 'game\objects\GameLocalPlayer.as'
 $vanePatched = Join-Path $patchRoot 'game\view\VaneView.as'
 $pathManagerPatched = Join-Path $patchRoot 'ddt\manager\PathManager.as'
 $bombPatched = Join-Path $patchRoot 'game\view\Bomb.as'
+$requestVariablePatched = Join-Path $patchRoot 'ddt\utils\RequestVairableCreater.as'
 Copy-Item -LiteralPath $gameLocalSource -Destination $gameLocalPatched -Force
 Copy-Item -LiteralPath $vaneSource -Destination $vanePatched -Force
 Copy-Item -LiteralPath $pathManagerSource -Destination $pathManagerPatched -Force
 Copy-Item -LiteralPath $bombSource -Destination $bombPatched -Force
+Copy-Item -LiteralPath $requestVariableSource -Destination $requestVariablePatched -Force
 
 $gameLocal = [IO.File]::ReadAllText($gameLocalPatched, [Text.Encoding]::UTF8)
 $gameLocal = $gameLocal.Replace('_map', 'map')
@@ -287,6 +291,19 @@ if ($resourceBase) {
     [IO.File]::WriteAllText($pathManagerPatched, $pathManager, (New-Object Text.UTF8Encoding($false)))
 }
 
+
+# The legacy client creates SelfInfo before Login.ashx populates the numeric player ID.
+# BasePlayer.ID is Number, so its uninitialized value serializes as NaN. Keep the
+# authenticated ID after login, but send a deterministic neutral ID before login.
+$requestVariable = [IO.File]::ReadAllText($requestVariablePatched, [Text.Encoding]::UTF8)
+$unsafeSelfId = '         _loc2_["selfid"] = PlayerManager.Instance.Self.ID;'
+$safeSelfId = '         _loc2_["selfid"] = isNaN(PlayerManager.Instance.Self.ID) ? 0 : PlayerManager.Instance.Self.ID;'
+Require ($requestVariable.Contains($unsafeSelfId) -or $requestVariable.Contains($safeSelfId)) 'RequestVairableCreater selfid assignment was not found.'
+if ($requestVariable.Contains($unsafeSelfId)) {
+    $requestVariable = $requestVariable.Replace($unsafeSelfId, $safeSelfId)
+}
+[IO.File]::WriteAllText($requestVariablePatched, $requestVariable, (New-Object Text.UTF8Encoding($false)))
+
 Invoke-Java @('-jar', $FfdecJar, '-onerror', 'abort', '-importScript', $decodedSwf, $patchedSwf, $patchRoot)
 Require (Test-Path -LiteralPath $patchedSwf) 'FFDec did not produce the patched SWF.'
 
@@ -296,9 +313,11 @@ $verifiedGameLocal = [IO.File]::ReadAllText((Join-Path $verifyRoot 'scripts\game
 $verifiedVane = [IO.File]::ReadAllText((Join-Path $verifyRoot 'scripts\game\view\VaneView.as'), [Text.Encoding]::UTF8)
 $verifiedPathManager = [IO.File]::ReadAllText((Join-Path $verifyRoot 'scripts\ddt\manager\PathManager.as'), [Text.Encoding]::UTF8)
 $verifiedBomb = [IO.File]::ReadAllText((Join-Path $verifyRoot 'scripts\game\view\Bomb.as'), [Text.Encoding]::UTF8)
+$verifiedRequestVariable = [IO.File]::ReadAllText((Join-Path $verifyRoot 'scripts\ddt\utils\RequestVairableCreater.as'), [Text.Encoding]::UTF8)
 
 Require ($verifiedBomb -match 'public function get target\(\) : Point') 'Patched SWF lost the Bomb target getter.'
 Require ($verifiedBomb -match 'public function set target\(param1:Point\) : void') 'Patched SWF is missing the Ruffle-safe Bomb target setter.'
+Require ($verifiedRequestVariable.Contains($safeSelfId)) 'Patched SWF is missing the pre-login selfid NaN guard.'
 Require ($verifiedGameLocal -match 'if\(this\._isShooting\)[\s\S]*this\._shootCount < this\.localPlayer\.shootCount[\s\S]*sendGameCMDDirection') 'Patched SWF is missing mid-volley left/right direction logic.'
 Require ($verifiedGameLocal -match '\+\+this\._shootCount;[\s\S]{0,300}if\(this\._shootCount >= this\.localPlayer\.shootCount\)[\s\S]{0,300}this\._shootTimer\.stop\(\)') 'Patched SWF is missing final-shot cleanup.'
 Require ($verifiedGameLocal -match '_loc2_ = shootPoint\(\);[\s\S]{0,250}sendGameCMDShoot') 'Patched SWF does not recompute the muzzle point for each projectile.'
