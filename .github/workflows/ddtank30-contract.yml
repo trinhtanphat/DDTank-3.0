@@ -26,6 +26,7 @@ jobs:
           $tests = @(
             'Test-DDTank30BuildStrategy.ps1',
             'Test-DDTank30Clr2RuntimeGuard.ps1',
+            'Test-DDTank30GameLogicClr2Build.ps1',
             'Test-DDTank30DatabaseSource.ps1',
             'Test-DDTank30DbAuth.ps1',
             'Test-DDTank30GameServerProject.ps1',
@@ -94,7 +95,7 @@ jobs:
       - name: Build Game.Logic and Fighting.Server
         shell: powershell
         run: |
-          msbuild ./Game.Logic/Game.Logic.csproj /t:Build /p:Configuration=Release /m /v:minimal
+          & powershell.exe -NoProfile -ExecutionPolicy Bypass -File ./deploy/Build-DDTank30GameLogicClr2.ps1
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           msbuild ./Fighting.Server/Fighting.Server.csproj /t:Build /p:Configuration=Release /m /v:minimal
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
