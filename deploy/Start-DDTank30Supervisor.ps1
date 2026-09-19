@@ -56,6 +56,10 @@ try {
         Start-Sleep -Seconds $PollSeconds
     }
 }
+catch {
+    Log ("supervisor failed: " + $_.Exception.GetType().FullName + ": " + $_.Exception.Message)
+    throw
+}
 finally {
     Log 'supervisor stopping children'
     for($i=$roles.Count-1;$i-ge0;$i--){
