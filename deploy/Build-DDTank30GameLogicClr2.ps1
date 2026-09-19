@@ -17,14 +17,33 @@ if (-not (Test-Path -LiteralPath $msbuild)) {
     throw "MSBuild v4 was not found: $msbuild"
 }
 
-& $msbuild $project /t:Rebuild "/p:Configuration=$Configuration" /p:TargetFrameworkVersion=v3.5 /p:BuildProjectReferences=false /m:1 /nologo /verbosity:minimal
+# The repository historically tracked build outputs and stale FileListAbsolute files
+# containing absolute paths from other machines. Do not use Rebuild/Clean here:
+# explicitly remove only the Game.Logic compiler outputs we own, then build.
+$binDir = Join-Path $repo "Game.Logic\bin\$Configuration"
+$objDir = Join-Path $repo "Game.Logic\obj\$Configuration"
+$ownedOutputs = @(
+    (Join-Path $binDir 'Game.Logic.dll'),
+    (Join-Path $binDir 'Game.Logic.pdb'),
+    (Join-Path $objDir 'Game.Logic.dll'),
+    (Join-Path $objDir 'Game.Logic.pdb')
+)
+foreach ($output in $ownedOutputs) {
+    Remove-Item -LiteralPath $output -Force -ErrorAction SilentlyContinue
+}
+$buildStarted = Get-Date
+
+& $msbuild $project /t:Build "/p:Configuration=$Configuration" /p:TargetFrameworkVersion=v3.5 /p:BuildProjectReferences=false /m:1 /nologo /verbosity:minimal
 if ($LASTEXITCODE -ne 0) {
     throw "Game.Logic CLR2 build failed with exit $LASTEXITCODE"
 }
 
-$dll = Join-Path $repo "Game.Logic\bin\$Configuration\Game.Logic.dll"
+$dll = Join-Path $binDir 'Game.Logic.dll'
 if (-not (Test-Path -LiteralPath $dll)) {
     throw "Game.Logic build output missing: $dll"
+}
+if ((Get-Item -LiteralPath $dll).LastWriteTime -lt $buildStarted.AddSeconds(-2)) {
+    throw "Game.Logic build output is stale: $dll"
 }
 
 $assembly = [Reflection.Assembly]::ReflectionOnlyLoadFrom($dll)

@@ -1,0 +1,4 @@
+# Game.Logic carrier is built from source by deploy/Build-DDTank30GameLogicClr2.ps1
+/Game.Logic/bin/Release/Game.Logic.dll
+/Game.Logic/bin/Release/Game.Logic.pdb
+/Game.Logic/obj/Release/Game.Logic.csprojResolveAssemblyReference.cache
