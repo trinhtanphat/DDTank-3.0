@@ -72,6 +72,24 @@ if(Test-Path -LiteralPath $legacyConfig -PathType Leaf){
     $legacyNode.EXTERNAL_INTERFACE.SetAttribute('enable','false')
     $legacyNode.EXTERNAL_INTERFACE.SetAttribute('path','')
   }
+  $legacyUpdate=$legacyXml.root.update
+  if(-not$legacyUpdate){
+    $legacyUpdate=$legacyXml.CreateElement('update')
+    [void]$legacyXml.root.AppendChild($legacyUpdate)
+  }
+  $clientRefresh=@($legacyUpdate.version | Where-Object { [string]$_.from -eq '14' -and [string]$_.to -eq '15' }) | Select-Object -First 1
+  if(-not$clientRefresh){
+    $clientRefresh=$legacyXml.CreateElement('version')
+    $clientRefresh.SetAttribute('from','14')
+    $clientRefresh.SetAttribute('to','15')
+    [void]$legacyUpdate.AppendChild($clientRefresh)
+  }
+  $clientRefreshFile=@($clientRefresh.file | Where-Object { $_.GetAttribute('value') -eq '2.png' }) | Select-Object -First 1
+  if(-not$clientRefreshFile){
+    $clientRefreshFile=$legacyXml.CreateElement('file')
+    $clientRefreshFile.SetAttribute('value','2.png')
+    [void]$clientRefresh.AppendChild($clientRefreshFile)
+  }
   $legacyXmlSettings=New-Object Xml.XmlWriterSettings
   $legacyXmlSettings.Encoding=New-Object Text.UTF8Encoding($false)
   $legacyXmlSettings.Indent=$true
@@ -84,7 +102,7 @@ $clientTarget=Join-Path $webRoot $clientRel
 $clientInput=$clientTarget
 $clientPatcher=Join-Path $PSScriptRoot 'Patch-DDTank30ClientWindAim.ps1'
 $clientResourceBaseUrl=('http://'+$PublicIp+':'+$HttpPort+'/Resource/')
-$clientPatchContract='wind-aim-resource-host-prelogin-selfid-v4'
+$clientPatchContract='wind-aim-resource-host-prelogin-selfid-projectile-v5'
 foreach($p in @($clientInput,$clientPatcher)){if(-not(Test-Path -LiteralPath $p -PathType Leaf)){throw "Missing client wind/aim patch prerequisite: $p"}}
 
 $clientInputSha=(Get-FileHash -LiteralPath $clientInput -Algorithm SHA256).Hash.ToUpperInvariant()
