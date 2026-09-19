@@ -24,5 +24,7 @@ $clientProvPath=Join-Path $repo 'runtime\client-v30-generation-20260918.json'
 if(-not(Test-Path -LiteralPath $clientProvPath -PathType Leaf)){throw "Missing v30 client generation provenance: $clientProvPath"}
 $clientProv=Get-Content -LiteralPath $clientProvPath -Raw | ConvertFrom-Json
 if(([string]$clientProv.input_sha256).ToUpperInvariant()-ne$clientExpectedSha){throw 'v30 client provenance input SHA mismatch'}
-if(([string]$clientProv.patched_output_sha256).ToUpperInvariant()-ne'DC34CA8636142675E2C6182C8DD622932E3330761C50C97835A8B24575FF4BCE'){throw 'v30 client provenance patched output SHA mismatch'}
+if(([string]$clientProv.patched_output_sha256).ToUpperInvariant()-ne'67F283A0369AC790FF7EA67F7347C025A3714B17F8380A5B6112C7C0B23049CF'){throw 'v30 client provenance patched output SHA mismatch'}
+if(([string]$clientProv.patched_swf_sha256).ToUpperInvariant()-ne'328FEC709C127ED4D00BABF96D949CCC2924752A279915F375AAF33F9D691B39'){throw 'v30 client provenance patched SWF SHA mismatch'}
+if(([string]$clientProv.patch_contract)-ne'wind-aim-resource-host-prelogin-selfid-projectile-v5'){throw 'v30 client provenance patch contract mismatch'}
 Write-Host 'PASS: DDTank30 canonical A6FB client generation is pinned for post-mirror wind patching.'

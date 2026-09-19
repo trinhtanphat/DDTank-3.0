@@ -118,7 +118,7 @@ $verifyRoot = Join-Path $WorkRoot 'verify'
 
 Decode-DDTank30AlmClient $InputEncodedClient $decodedSwf
 
-$selectedClasses = 'game.objects.GameLocalPlayer,game.view.VaneView,ddt.manager.PathManager,game.view.Bomb,ddt.utils.RequestVairableCreater'
+$selectedClasses = 'game.objects.GameLocalPlayer,game.view.VaneView,ddt.manager.PathManager,game.view.Bomb,ddt.utils.RequestVairableCreater,ddt.view.character.GameCharacter'
 Invoke-Java @('-jar', $FfdecJar, '-onerror', 'abort', '-selectclass', $selectedClasses, '-export', 'script', $exportRoot, $decodedSwf)
 
 $gameLocalSource = Join-Path $exportRoot 'scripts\game\objects\GameLocalPlayer.as'
@@ -126,23 +126,27 @@ $vaneSource = Join-Path $exportRoot 'scripts\game\view\VaneView.as'
 $pathManagerSource = Join-Path $exportRoot 'scripts\ddt\manager\PathManager.as'
 $bombSource = Join-Path $exportRoot 'scripts\game\view\Bomb.as'
 $requestVariableSource = Join-Path $exportRoot 'scripts\ddt\utils\RequestVairableCreater.as'
+$gameCharacterSource = Join-Path $exportRoot 'scripts\ddt\view\character\GameCharacter.as'
 Require (Test-Path -LiteralPath $gameLocalSource) 'FFDec did not export GameLocalPlayer.as.'
 Require (Test-Path -LiteralPath $vaneSource) 'FFDec did not export VaneView.as.'
 Require (Test-Path -LiteralPath $pathManagerSource) 'FFDec did not export PathManager.as.'
 Require (Test-Path -LiteralPath $bombSource) 'FFDec did not export Bomb.as.'
 Require (Test-Path -LiteralPath $requestVariableSource) 'FFDec did not export RequestVairableCreater.as.'
+Require (Test-Path -LiteralPath $gameCharacterSource) 'FFDec did not export GameCharacter.as.'
 
-New-Item -ItemType Directory -Force -Path (Join-Path $patchRoot 'game\objects'), (Join-Path $patchRoot 'game\view'), (Join-Path $patchRoot 'ddt\manager'), (Join-Path $patchRoot 'ddt\utils') | Out-Null
+New-Item -ItemType Directory -Force -Path (Join-Path $patchRoot 'game\objects'), (Join-Path $patchRoot 'game\view'), (Join-Path $patchRoot 'ddt\manager'), (Join-Path $patchRoot 'ddt\utils'), (Join-Path $patchRoot 'ddt\view\character') | Out-Null
 $gameLocalPatched = Join-Path $patchRoot 'game\objects\GameLocalPlayer.as'
 $vanePatched = Join-Path $patchRoot 'game\view\VaneView.as'
 $pathManagerPatched = Join-Path $patchRoot 'ddt\manager\PathManager.as'
 $bombPatched = Join-Path $patchRoot 'game\view\Bomb.as'
 $requestVariablePatched = Join-Path $patchRoot 'ddt\utils\RequestVairableCreater.as'
+$gameCharacterPatched = Join-Path $patchRoot 'ddt\view\character\GameCharacter.as'
 Copy-Item -LiteralPath $gameLocalSource -Destination $gameLocalPatched -Force
 Copy-Item -LiteralPath $vaneSource -Destination $vanePatched -Force
 Copy-Item -LiteralPath $pathManagerSource -Destination $pathManagerPatched -Force
 Copy-Item -LiteralPath $bombSource -Destination $bombPatched -Force
 Copy-Item -LiteralPath $requestVariableSource -Destination $requestVariablePatched -Force
+Copy-Item -LiteralPath $gameCharacterSource -Destination $gameCharacterPatched -Force
 
 $gameLocal = [IO.File]::ReadAllText($gameLocalPatched, [Text.Encoding]::UTF8)
 $gameLocal = $gameLocal.Replace('_map', 'map')
@@ -304,6 +308,28 @@ if ($requestVariable.Contains($unsafeSelfId)) {
 }
 [IO.File]::WriteAllText($requestVariablePatched, $requestVariable, (New-Object Text.UTF8Encoding($false)))
 
+# Ruffle can leave the short prepare/shot bitmap actions reporting "playing" forever.
+# Bound only the four one-shot firing actions; normal 4-5 frame playback exits long before this guard.
+$gameCharacter = [IO.File]::ReadAllText($gameCharacterPatched, [Text.Encoding]::UTF8)
+if (-not $gameCharacter.Contains('private var _ruffleActionPlayingReads:int;')) {
+    $watchdogFieldMarker = '      private var _defaultAction:PlayerAction;'
+    Require ($gameCharacter.Contains($watchdogFieldMarker)) 'Could not locate GameCharacter watchdog field insertion point.'
+    $gameCharacter = $gameCharacter.Replace($watchdogFieldMarker, '      private var _ruffleActionPlayingReads:int;' + [Environment]::NewLine + '      ' + [Environment]::NewLine + $watchdogFieldMarker)
+
+    $watchdogResetMarker = '            this._currentAction = param1;' + [Environment]::NewLine + '            this._index = 0;'
+    Require ($gameCharacter.Contains($watchdogResetMarker)) 'Could not locate GameCharacter action reset point.'
+    $gameCharacter = $gameCharacter.Replace($watchdogResetMarker, $watchdogResetMarker + [Environment]::NewLine + '            this._ruffleActionPlayingReads = 0;')
+
+    $actionPlayingMarker = '      override public function actionPlaying() : Boolean' + [Environment]::NewLine + '      {' + [Environment]::NewLine + '         return this._isPlaying;' + [Environment]::NewLine + '      }'
+    Require ($gameCharacter.Contains($actionPlayingMarker)) 'Could not locate GameCharacter actionPlaying implementation.'
+    $actionPlayingReplacement = '      override public function actionPlaying() : Boolean' + [Environment]::NewLine + '      {' + [Environment]::NewLine + '         if(this._isPlaying && (this._currentAction == SHOWGUN || this._currentAction == SHOWTHROWS || this._currentAction == SHOT || this._currentAction == THROWS))' + [Environment]::NewLine + '         {' + [Environment]::NewLine + '            ++this._ruffleActionPlayingReads;' + [Environment]::NewLine + '            if(this._ruffleActionPlayingReads > this._currentAction.frames[0].length * 4)' + [Environment]::NewLine + '            {' + [Environment]::NewLine + '               this._isPlaying = false;' + [Environment]::NewLine + '            }' + [Environment]::NewLine + '         }' + [Environment]::NewLine + '         return this._isPlaying;' + [Environment]::NewLine + '      }'
+    $gameCharacter = $gameCharacter.Replace($actionPlayingMarker, $actionPlayingReplacement)
+}
+Require ($gameCharacter.Contains('private var _ruffleActionPlayingReads:int;')) 'GameCharacter Ruffle projectile watchdog field is missing.'
+Require ($gameCharacter.Contains('this._ruffleActionPlayingReads = 0;')) 'GameCharacter Ruffle projectile watchdog reset is missing.'
+Require ($gameCharacter.Contains('this._ruffleActionPlayingReads > this._currentAction.frames[0].length * 4')) 'GameCharacter Ruffle projectile watchdog bound is missing.'
+[IO.File]::WriteAllText($gameCharacterPatched, $gameCharacter, (New-Object Text.UTF8Encoding($false)))
+
 Invoke-Java @('-jar', $FfdecJar, '-onerror', 'abort', '-importScript', $decodedSwf, $patchedSwf, $patchRoot)
 Require (Test-Path -LiteralPath $patchedSwf) 'FFDec did not produce the patched SWF.'
 
@@ -314,10 +340,14 @@ $verifiedVane = [IO.File]::ReadAllText((Join-Path $verifyRoot 'scripts\game\view
 $verifiedPathManager = [IO.File]::ReadAllText((Join-Path $verifyRoot 'scripts\ddt\manager\PathManager.as'), [Text.Encoding]::UTF8)
 $verifiedBomb = [IO.File]::ReadAllText((Join-Path $verifyRoot 'scripts\game\view\Bomb.as'), [Text.Encoding]::UTF8)
 $verifiedRequestVariable = [IO.File]::ReadAllText((Join-Path $verifyRoot 'scripts\ddt\utils\RequestVairableCreater.as'), [Text.Encoding]::UTF8)
+$verifiedGameCharacter = [IO.File]::ReadAllText((Join-Path $verifyRoot 'scripts\ddt\view\character\GameCharacter.as'), [Text.Encoding]::UTF8)
 
 Require ($verifiedBomb -match 'public function get target\(\) : Point') 'Patched SWF lost the Bomb target getter.'
 Require ($verifiedBomb -match 'public function set target\(param1:Point\) : void') 'Patched SWF is missing the Ruffle-safe Bomb target setter.'
 Require ($verifiedRequestVariable.Contains($safeSelfId)) 'Patched SWF is missing the pre-login selfid NaN guard.'
+Require ($verifiedGameCharacter.Contains('private var _ruffleActionPlayingReads:int;')) 'Patched SWF is missing the Ruffle projectile watchdog field.'
+Require ($verifiedGameCharacter.Contains('this._ruffleActionPlayingReads = 0;')) 'Patched SWF is missing the Ruffle projectile watchdog reset.'
+Require ($verifiedGameCharacter.Contains('this._ruffleActionPlayingReads > this._currentAction.frames[0].length * 4')) 'Patched SWF is missing the bounded Ruffle projectile watchdog.'
 Require ($verifiedGameLocal -match 'if\(this\._isShooting\)[\s\S]*this\._shootCount < this\.localPlayer\.shootCount[\s\S]*sendGameCMDDirection') 'Patched SWF is missing mid-volley left/right direction logic.'
 Require ($verifiedGameLocal -match '\+\+this\._shootCount;[\s\S]{0,300}if\(this\._shootCount >= this\.localPlayer\.shootCount\)[\s\S]{0,300}this\._shootTimer\.stop\(\)') 'Patched SWF is missing final-shot cleanup.'
 Require ($verifiedGameLocal -match '_loc2_ = shootPoint\(\);[\s\S]{0,250}sendGameCMDShoot') 'Patched SWF does not recompute the muzzle point for each projectile.'
